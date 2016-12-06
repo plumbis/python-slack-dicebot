@@ -1,4 +1,6 @@
 from flask import Flask
+from flask import request
+
 app = Flask(__name__)
 
 
@@ -9,7 +11,9 @@ def roll():
 
 @app.route('/<name>', methods=["GET", "POST"])
 def hello_name(name):
-    return "Hello {}!".format(name)
+    print(request.form)
+
+    return name
 
 
 if __name__ == "__main__":
