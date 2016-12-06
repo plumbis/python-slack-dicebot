@@ -12,7 +12,7 @@ def roll():
 @app.route('/<name>', methods=["GET", "POST"])
 def hello_name(name):
     print(request.form)
-
+    print "test log"
     return name
 
 
