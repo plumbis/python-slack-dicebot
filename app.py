@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from flask import Flask
 from flask import request
 import random
@@ -18,25 +19,32 @@ def valid_roll(input_roll_string):
 
     Valid numbers are between 1d1 and 99d100
 
-    Returns True or False if the roll is valid
+    If the roll is invalid returns False.
+    If the roll is valid, an list of [number_of_dice, die, modifier] is returned
     '''
+    if not isinstance(input_roll_string, str):
+        print("Input not a string. Given " + str(input_roll_string))
+        return False
 
     roll_string = input_roll_string.replace(" ", "")
 
     # 1d6 is minimum roll string length
     # 100d100+100 is the maximum roll string
-    if len(roll_string) < 3 or len(roll_string) > 9:
+    if len(roll_string) < 3 or len(roll_string) > 11:
+        print("Roll string too short. Given " + input_roll_string)
         return False
 
     d_position = roll_string.find("d")
 
     if d_position < 0:
+        print("'d' found in incorrect position. Given " + input_roll_string)
         return False
 
     num_dice = roll_string[:d_position]
 
     for character in num_dice:
         if not character.isdigit():
+            print("Non digit found in the number of dice provided. Given " + input_roll_string)
             return False
 
     plus_pos = roll_string.find("+")
@@ -44,26 +52,60 @@ def valid_roll(input_roll_string):
 
     if plus_pos > 0:
         die_value = roll_string[d_position + 1:plus_pos]
+        if len(die_value) == 0:
+            print("No dice value provided. Given " + input_roll_string)
+            return False
         roll_modifier = roll_string[plus_pos + 1:]
     elif minus_pos > 0:
         die_value = roll_string[d_position + 1:minus_pos]
+        if len(die_value) == 0:
+            print("No dice value provided. Given " + input_roll_string)
+            return False
         roll_modifier = roll_string[minus_pos:]
     else:
-        die_value = roll_string[d_position:]
+        die_value = roll_string[d_position + 1:]
+        if len(die_value) == 0:
+            print("No dice value provided. Given " + input_roll_string)
+            return False
+        roll_modifier = "0"
 
     for character in die_value:
         if not character.isdigit():
+            print("Non digit found in the dice value. Given " + input_roll_string)
+            print(die_value)
             return False
 
+    if int(die_value) <= 0:
+        print("Die value can not be 0 or less. Given " + input_roll_string)
+        return False
+
+    if int(num_dice) <= 0:
+        print("Number of dice can not be 0 or less. Given " + input_roll_string)
+        return False
+
     if len(roll_modifier) > 0:
+        first_character = True
         for character in roll_modifier:
+
+            # To make the math easier, we preserve the "-" in a "-2" modifier.
+            # This breaks the isdigit() check.
+            # To solve, let's allow a "-" in the first position only.
+            if character == "-" and first_character:
+                if len(roll_modifier) <= 1:
+                    print ("Invalid roll modifer. Given " + str(input_roll_string))
+                    return False
+
+                first_character = False
+                continue
             if not character.isdigit():
+                print("Non digit found in the modifier. Given " + input_roll_string)
                 return False
+            first_character = False
 
-    return True
+    return [num_dice, die_value, roll_modifier]
 
 
-def generate_roll(roll_string):
+def generate_roll(roll_list):
     '''
     Takes in a valid roll string and returns the sum of the roll with modifiers
     '''
@@ -74,32 +116,40 @@ def generate_roll(roll_string):
     I would have to be better at parsing logic
     '''
 
-    d_position = roll_string.find("d")
+    if not isinstance(roll_list, list):
+        print("Roll list is not a list. Passed " + str(roll_list))
 
-    num_dice = roll_string[:d_position]
+    if not len(roll_list) == 3:
+        print("Invalid roll list, passed " + str(roll_list))
+        return False
 
-    for character in num_dice:
-        if not character.isdigit():
+    for num in roll_list:
+        # Because I'm not above giving StackOverflow some credit
+        # https://stackoverflow.com/questions/27050570/how-would-i-account-for-negative-values-in-python
+        try:
+            int(num)
+        except ValueError:
+            print("Roll list contains non-numbers. Passed " + str(roll_list))
             return False
 
-    plus_pos = roll_string.find("+")
-    minus_pos = roll_string.find("-")
+    num_dice = int(roll_list[0])
+    die_value = int(roll_list[1])
+    modifier = int(roll_list[2])
 
-    if plus_pos > 0:
-        die_value = roll_string[d_position + 1:plus_pos]
-        roll_modifier = roll_string[plus_pos + 1:]
-    elif minus_pos > 0:
-        die_value = roll_string[d_position + 1:minus_pos]
-        roll_modifier = roll_string[minus_pos:]
-    else:
-        die_value = roll_string[d_position:]
-        roll_modifier = 0
-
+    if num_dice <= 0:
+        print("Invalid number of dice. Passed " + str(roll_list))
+        return False
+    if die_value <= 0:
+        print("Invalid die value. Passed " + str(roll_list))
+        return False
     rolls = []
-    for x in range(0, num_dice):
-        rolls.append(random.randint(1, die_value))
 
-    return sum(rolls) + roll_modifier
+    for x in range(0, num_dice):
+        roll_result = random.randint(1, die_value)
+        print(("roll: " + str(roll_result)))
+        rolls.append(roll_result)
+
+    return sum(rolls) + modifier
 
 
 @app.route('/test', methods=["GET", "POST"])
@@ -109,13 +159,15 @@ def roll():
 
     slack_message = request.form.get('text')
 
-    if not valid_roll(slack_message):
-        return "error"
+    roll_list = valid_roll(slack_message)
+    if not roll_list:
+        print("error")
 
-    return generate_roll(slack_message)
+    roll = generate_roll(roll_list)
 
-    return "blah"
+    print("complete")
 
+    return roll
 
 if __name__ == "__main__":
     app.run()
