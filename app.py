@@ -29,8 +29,11 @@ def valid_roll(input_roll_string):
     If the roll is valid, an list of [number_of_dice, die, modifier] is returned
     '''
 
-    # Slack returns unicode messages.
-    if not isinstance(input_roll_string, str) or isinstance(input_roll_string, unicode):
+    # Slack returns unicode messages. tests are likely strings.
+    # Let's do this the dumb and easy way.
+    try:
+        str(input_roll_string)
+    except ValueError:
         if debug:
             print type(input_roll_string)
             print("Input not a string. Given " + str(input_roll_string))
