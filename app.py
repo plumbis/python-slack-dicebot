@@ -30,6 +30,7 @@ def valid_roll(input_roll_string):
     '''
     if not isinstance(input_roll_string, str):
         if debug:
+            print type(input_roll_string)
             print("Input not a string. Given " + str(input_roll_string))
         return False
 
@@ -233,6 +234,7 @@ def generate_slack_response(text):
 def roll():
 
     slack_dict = parse_slack_message(request.form)
+    print request.form
 
     if not slack_dict:
         jsonify(generate_slack_response("Invalid Slack Message"))
