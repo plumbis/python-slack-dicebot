@@ -256,12 +256,12 @@ def roll():
     generated_roll = generate_roll(roll_list)
 
     output = []
-    output.append(" + ".join(generated_roll[0]))
+    output.append(" + ".join(str(generated_roll[0])))
     if generated_roll[1] != 0:
-        output.append(" + (" + generated_roll[1] + ")")
+        output.append(" + (" + str(generated_roll[1]) + ")")
 
     output.append(" = ")
-    output.append(str(sum(map(int, generated_roll[0]))))
+    output.append(sum(map(int, generated_roll[0])) + generated_roll[1])
     return jsonify(generate_slack_response("".join(output)))
 
 
