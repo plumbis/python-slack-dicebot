@@ -256,7 +256,7 @@ def roll():
     generated_roll = generate_roll(roll_list)
 
     output = []
-    output.append(" + ".join(str(generated_roll[0])))
+    output.append(" + ".join(generated_roll[0]))
     if generated_roll[1] != 0:
         output.append(" + (" + str(generated_roll[1]) + ")")
 
