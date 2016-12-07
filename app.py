@@ -246,22 +246,29 @@ def roll():
     print request.form
 
     if not slack_dict:
-        jsonify(generate_slack_response("Invalid Slack Message"))
+        return jsonify(generate_slack_response("Invalid Slack Message"))
 
     roll_list = valid_roll(slack_dict["text"])
 
     if not roll_list:
-        jsonify(generate_slack_response("Invalid Roll"))
+        return jsonify(generate_slack_response("Invalid Roll"))
 
-    generated_roll = generate_roll(roll_list)
+    generated_rolls = generate_roll(roll_list)
+    int_rolls = generated_rolls[0]
+    modifier = generated_rolls[1]
+    string_rolls = []
+    rolls_total = sum(int_rolls) + modifier
+
+    for roll in int_rolls[0]:
+        string_rolls.append(str(roll))
 
     output = []
-    output.append(" + ".join(generated_roll[0]))
-    if generated_roll[1] != 0:
-        output.append(" + (" + str(generated_roll[1]) + ")")
+    output.append(" + ".join(string_rolls))
+    if modifier != 0:
+        output.append(" + (" + str(modifier) + ")")
 
     output.append(" = ")
-    output.append(str(sum(map(int, generated_roll[0])) + generated_roll[1]))
+    output.append(rolls_total)
     return jsonify(generate_slack_response("".join(output)))
 
 
