@@ -231,7 +231,7 @@ def roll():
     slack_dict = parse_slack_message(request.form)
 
     if not slack_dict:
-        return False
+        return "Invalid Slack Message"
 
     roll_list = valid_roll(slack_dict["text"])
 
