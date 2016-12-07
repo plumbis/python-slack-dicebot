@@ -257,7 +257,7 @@ def roll():
 
     print("Final Roll: " + str(roll))
 
-    return jsonify(generate_slack_response(generate_slack_response(roll)))
+    return jsonify(generate_slack_response(roll))
 
 
 if __name__ == "__main__":
