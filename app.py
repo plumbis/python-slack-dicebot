@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from flask import Flask
 from flask import request
+from flask import jsonify
 import random
-import json
 import os
 
 app = Flask(__name__)
@@ -222,27 +222,29 @@ def generate_slack_response(text):
     response["response_type"] = "in_channel"
     response["text"] = text
 
-    return json.dumps(response)
+    return response
 
 
 @app.route('/test', methods=["GET", "POST"])
 def roll():
 
-    slack_dict = parse_slack_message(request.form)
+    # slack_dict = parse_slack_message(request.form)
 
-    if not slack_dict:
-        return "Invalid Slack Message"
+    # if not slack_dict:
+    #     return "Invalid Slack Message"
 
-    roll_list = valid_roll(slack_dict["text"])
+    # roll_list = valid_roll(slack_dict["text"])
 
-    if not roll_list:
-        return False
+    # if not roll_list:
+    #     return False
 
-    roll = generate_roll(roll_list)
+    # roll = generate_roll(roll_list)
 
-    print("Final Roll: " + str(roll))
+    # print("Final Roll: " + str(roll))
 
-    return generate_slack_response(roll)
+    # return generate_slack_response(roll)
+
+    return jsonify(generate_slack_response("42"))
 
 
 if __name__ == "__main__":
