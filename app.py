@@ -192,19 +192,23 @@ def parse_slack_message(slack_message):
     '''
 
     if "user_name" not in slack_message:
-        print("No user_name field in slack message: " + slack_message)
+        if debug:
+            print("No user_name field in slack message: " + slack_message)
         return False
 
     if "command" not in slack_message:
-        print("No command in slack message: " + slack_message)
+        if debug:
+            print("No command in slack message: " + slack_message)
         return False
 
     if "text" not in slack_message:
-        print("No text in slack message: " + slack_message)
+        if debug:
+            print("No text in slack message: " + slack_message)
         return False
 
     if "channel_name" not in slack_message:
-        print("No channel in slack message: " + slack_message)
+        if debug:
+            print("No channel in slack message: " + slack_message)
         return False
 
     return {"user_name": slack_message["user_name"],
@@ -231,20 +235,18 @@ def roll():
     slack_dict = parse_slack_message(request.form)
 
     if not slack_dict:
-        return "Invalid Slack Message"
+        jsonify(generate_slack_response("Invalid Slack Message"))
 
-    # roll_list = valid_roll(slack_dict["text"])
+    roll_list = valid_roll(slack_dict["text"])
 
-    # if not roll_list:
-    #     return False
+    if not roll_list:
+        jsonify(generate_slack_response("Invalid Roll"))
 
-    # roll = generate_roll(roll_list)
+    roll = generate_roll(roll_list)
 
-    # print("Final Roll: " + str(roll))
+    print("Final Roll: " + str(roll))
 
-    # return generate_slack_response(roll)
-
-    return jsonify(generate_slack_response("42"))
+    return jsonify(generate_slack_response(generate_slack_response(roll)))
 
 
 if __name__ == "__main__":
