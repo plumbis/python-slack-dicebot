@@ -7,7 +7,7 @@ import os
 
 app = Flask(__name__)
 
-debug = False
+debug = True
 SLACK_WEBHOOK = None
 SLACK_TOKEN = None
 
