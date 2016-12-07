@@ -228,10 +228,10 @@ def generate_slack_response(text):
 @app.route('/test', methods=["GET", "POST"])
 def roll():
 
-    # slack_dict = parse_slack_message(request.form)
+    slack_dict = parse_slack_message(request.form)
 
-    # if not slack_dict:
-    #     return "Invalid Slack Message"
+    if not slack_dict:
+        return "Invalid Slack Message"
 
     # roll_list = valid_roll(slack_dict["text"])
 
