@@ -231,6 +231,10 @@ def generate_slack_response(text):
     response = dict()
     response["response_type"] = "in_channel"
     response["text"] = text
+    response["attachments"] = []
+
+    if debug:
+        print("Slack Response: " + str(response))
 
     return response
 
