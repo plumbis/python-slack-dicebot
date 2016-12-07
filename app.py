@@ -261,7 +261,7 @@ def roll():
         output.append(" + (" + generated_roll[1] + ")")
 
     output.append(" = ")
-    output.append(sum(map(int, generated_roll[0])))
+    output.append(str(sum(map(int, generated_roll[0]))))
     return jsonify(generate_slack_response("".join(output)))
 
 
