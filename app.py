@@ -2,8 +2,14 @@
 from flask import Flask
 from flask import request
 import random
+import json
+import os
 
 app = Flask(__name__)
+
+debug = False
+SLACK_WEBHOOK = None
+SLACK_TOKEN = None
 
 
 def valid_roll(input_roll_string):
@@ -23,7 +29,8 @@ def valid_roll(input_roll_string):
     If the roll is valid, an list of [number_of_dice, die, modifier] is returned
     '''
     if not isinstance(input_roll_string, str):
-        print("Input not a string. Given " + str(input_roll_string))
+        if debug:
+            print("Input not a string. Given " + str(input_roll_string))
         return False
 
     roll_string = input_roll_string.replace(" ", "")
@@ -31,20 +38,23 @@ def valid_roll(input_roll_string):
     # 1d6 is minimum roll string length
     # 100d100+100 is the maximum roll string
     if len(roll_string) < 3 or len(roll_string) > 11:
-        print("Roll string too short. Given " + input_roll_string)
+        if debug:
+            print("Roll string too short. Given " + input_roll_string)
         return False
 
     d_position = roll_string.find("d")
 
     if d_position < 0:
-        print("'d' found in incorrect position. Given " + input_roll_string)
+        if debug:
+            print("'d' found in incorrect position. Given " + input_roll_string)
         return False
 
     num_dice = roll_string[:d_position]
 
     for character in num_dice:
         if not character.isdigit():
-            print("Non digit found in the number of dice provided. Given " + input_roll_string)
+            if debug:
+                print("Non digit found in the number of dice provided. Given " + input_roll_string)
             return False
 
     plus_pos = roll_string.find("+")
@@ -53,34 +63,39 @@ def valid_roll(input_roll_string):
     if plus_pos > 0:
         die_value = roll_string[d_position + 1:plus_pos]
         if len(die_value) == 0:
-            print("No dice value provided. Given " + input_roll_string)
+            if debug:
+                print("No dice value provided. Given " + input_roll_string)
             return False
         roll_modifier = roll_string[plus_pos + 1:]
     elif minus_pos > 0:
         die_value = roll_string[d_position + 1:minus_pos]
         if len(die_value) == 0:
-            print("No dice value provided. Given " + input_roll_string)
+            if debug:
+                print("No dice value provided. Given " + input_roll_string)
             return False
         roll_modifier = roll_string[minus_pos:]
     else:
         die_value = roll_string[d_position + 1:]
         if len(die_value) == 0:
-            print("No dice value provided. Given " + input_roll_string)
+            if debug:
+                print("No dice value provided. Given " + input_roll_string)
             return False
         roll_modifier = "0"
 
     for character in die_value:
         if not character.isdigit():
-            print("Non digit found in the dice value. Given " + input_roll_string)
-            print(die_value)
+            if debug:
+                print("Non digit found in the dice value. Given " + input_roll_string)
             return False
 
     if int(die_value) <= 0:
-        print("Die value can not be 0 or less. Given " + input_roll_string)
+        if debug:
+            print("Die value can not be 0 or less. Given " + input_roll_string)
         return False
 
     if int(num_dice) <= 0:
-        print("Number of dice can not be 0 or less. Given " + input_roll_string)
+        if debug:
+            print("Number of dice can not be 0 or less. Given " + input_roll_string)
         return False
 
     if len(roll_modifier) > 0:
@@ -92,13 +107,15 @@ def valid_roll(input_roll_string):
             # To solve, let's allow a "-" in the first position only.
             if character == "-" and first_character:
                 if len(roll_modifier) <= 1:
-                    print ("Invalid roll modifer. Given " + str(input_roll_string))
+                    if debug:
+                        print ("Invalid roll modifer. Given " + str(input_roll_string))
                     return False
 
                 first_character = False
                 continue
             if not character.isdigit():
-                print("Non digit found in the modifier. Given " + input_roll_string)
+                if debug:
+                    print("Non digit found in the modifier. Given " + input_roll_string)
                 return False
             first_character = False
 
@@ -117,10 +134,13 @@ def generate_roll(roll_list):
     '''
 
     if not isinstance(roll_list, list):
-        print("Roll list is not a list. Passed " + str(roll_list))
+        if debug:
+            print("Roll list is not a list. Passed " + str(roll_list))
+        return False
 
     if not len(roll_list) == 3:
-        print("Invalid roll list, passed " + str(roll_list))
+        if debug:
+            print("Invalid roll list, passed " + str(roll_list))
         return False
 
     for num in roll_list:
@@ -129,7 +149,8 @@ def generate_roll(roll_list):
         try:
             int(num)
         except ValueError:
-            print("Roll list contains non-numbers. Passed " + str(roll_list))
+            if debug:
+                print("Roll list contains non-numbers. Passed " + str(roll_list))
             return False
 
     num_dice = int(roll_list[0])
@@ -137,37 +158,92 @@ def generate_roll(roll_list):
     modifier = int(roll_list[2])
 
     if num_dice <= 0:
-        print("Invalid number of dice. Passed " + str(roll_list))
+        if debug:
+            print("Invalid number of dice. Passed " + str(roll_list))
         return False
     if die_value <= 0:
-        print("Invalid die value. Passed " + str(roll_list))
+        if debug:
+            print("Invalid die value. Passed " + str(roll_list))
         return False
     rolls = []
 
     for x in range(0, num_dice):
         roll_result = random.randint(1, die_value)
-        print(("roll: " + str(roll_result)))
+        if debug:
+            print(("roll: " + str(roll_result)))
         rolls.append(roll_result)
 
     return sum(rolls) + modifier
 
 
+def parse_slack_message(slack_message):
+    '''
+    Slack POST messages send JSON that looks like the following:
+    {"token": "uto4ItLoT82ceQoBpIvgtzzz",
+              "team_id": "T0C3TFAGL",
+              "team_domain": "my_team_name",
+              "channel_id": "D0C3VQDAS",
+              "channel_name": "directmessage",
+              "user_id": "U0C3TFAQ4",
+              "user_name": "my_username",
+              "command": "/weather",
+              "text": "2d6",
+              "response_url": "https://hooks.slack.com/commands/T0C3TFAGL/112373954929/8k4mT8sMpIRdslA0IOMKvWSS"}
+    '''
+
+    if "user_name" not in slack_message:
+        print("No user_name field in slack message: " + slack_message)
+        return False
+
+    if "command" not in slack_message:
+        print("No command in slack message: " + slack_message)
+        return False
+
+    if "text" not in slack_message:
+        print("No text in slack message: " + slack_message)
+        return False
+
+    if "channel_name" not in slack_message:
+        print("No channel in slack message: " + slack_message)
+        return False
+
+    return {"user_name": slack_message["user_name"],
+            "command": slack_message["command"],
+            "text": slack_message["text"],
+            "channel_name": slack_message["channel_name"]}
+
+
+def generate_slack_response(text):
+    # if SLACK_WEBHOOK in os.environ:
+    #      webhook = os.environ["SLACK_WEBHOOK"]
+    #      token = os.environ["SLACK_TOKEN"]
+
+    response = dict()
+    response["response_type"] = "in_channel"
+    response["text"] = text
+
+    return json.dumps(response)
+
+
 @app.route('/test', methods=["GET", "POST"])
 def roll():
-    if "text" not in request.form:
-        return "Error. Expecting 'text' key from slack, received: " + request.form
 
-    slack_message = request.form.get('text')
+    slack_dict = parse_slack_message(request.form)
 
-    roll_list = valid_roll(slack_message)
+    if not slack_dict:
+        return False
+
+    roll_list = valid_roll(slack_dict["text"])
+
     if not roll_list:
-        print("error")
+        return False
 
     roll = generate_roll(roll_list)
 
-    print("complete")
+    print("Final Roll: " + str(roll))
 
-    return roll
+    return generate_slack_response(roll)
+
 
 if __name__ == "__main__":
     app.run()
