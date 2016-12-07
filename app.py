@@ -179,7 +179,7 @@ def generate_roll(roll_list):
             print(("roll: " + str(roll_result)))
         rolls.append(roll_result)
 
-    return sum(rolls) + modifier
+    return [sum(rolls) + modifier, rolls, modifier]
 
 
 def parse_slack_message(slack_message):
@@ -253,11 +253,19 @@ def roll():
     if not roll_list:
         jsonify(generate_slack_response("Invalid Roll"))
 
-    roll = generate_roll(roll_list)
+    generated_roll = generate_roll(roll_list)
+    # [sum(rolls) + modifier, rolls, modifier]
+    print("Final Roll: " + str(generated_roll[0]))
 
-    print("Final Roll: " + str(roll))
+    output = []
+    for roll in generated_roll[3]:
+        output.append(roll + " + ")
+    if generated_roll[1] != 0:
+        output.append("(" + generated_roll[1] + ")")
 
-    return jsonify(generate_slack_response(roll))
+    output.append(" = ")
+    output.append(generated_roll[0])
+    return jsonify(generate_slack_response("".join(output)))
 
 
 if __name__ == "__main__":
