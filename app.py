@@ -282,6 +282,7 @@ def normal_roll():
 
     output_text.append("=")
     output_text.append("*" + str(roll_dict["total"]) + "*")
+    output_text.append("")
 
     return jsonify(generate_slack_response(" ".join(output_text)))
 
