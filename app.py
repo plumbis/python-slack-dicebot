@@ -242,7 +242,7 @@ def roll():
         return jsonify(generate_slack_response("Invalid Slack Message"))
 
     # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
-    roll_dict = valid_roll(slack_dict["text"])
+    roll_dict = generate_roll(valid_roll(slack_dict["text"]))
 
     if not isinstance(roll_dict, dict):
         if debug:
