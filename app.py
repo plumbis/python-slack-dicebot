@@ -175,7 +175,7 @@ def generate_roll(roll_dict):
             "modifier": modifier}
 
 
-def parse_slack_message(slack_message):
+def parse_slack_message(slack_message,roll2d20=False):
     '''
     Slack POST messages send JSON that looks like the following:
     {"token": "uto4ItLoT82ceQoBpIvgtzzz",
@@ -210,19 +210,28 @@ def parse_slack_message(slack_message):
             print("No channel in slack message: " + slack_message)
         return False
 
+    if roll2d20:
+        text = "1d20"
+    else:
+        text = slack_message["text"]
+
     return {"user_name": slack_message["user_name"],
             "command": slack_message["command"],
-            "text": slack_message["text"],
+            "text": text,
             "channel_name": slack_message["channel_name"]}
 
 
-def generate_slack_response(text):
+def generate_slack_response(text, in_channel=True):
     # if SLACK_WEBHOOK in os.environ:
     #      webhook = os.environ["SLACK_WEBHOOK"]
     #      token = os.environ["SLACK_TOKEN"]
 
+    if in_channel:
+        where = "in_channel"
+    else:
+        where = "ephemeral"
     response = dict()
-    response["response_type"] = "in_channel"
+    response["response_type"] = where
     response["text"] = text
     response["attachments"] = []
 
@@ -233,7 +242,7 @@ def generate_slack_response(text):
 
 
 @app.route('/test', methods=["GET", "POST"])
-def roll():
+def normal_roll():
 
     slack_dict = parse_slack_message(request.form)
     print(request.form)
@@ -241,17 +250,23 @@ def roll():
     if not slack_dict:
         return jsonify(generate_slack_response("Invalid Slack Message"))
 
+    roll_string = slack_dict["text"]
+
+    if not roll_string:
+        return jsonify(generate_slack_response("Invalid Roll. <num>d<side> +/-<modifier>", in_channel=False))
+
     # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
-    roll_dict = generate_roll(valid_roll(slack_dict["text"]))
+    roll_dict = generate_roll(valid_roll(roll_string))
 
     if not isinstance(roll_dict, dict):
         if debug:
             print("valid_roll() failed to return a dict. Provided " + str(roll_dict))
+        return jsonify(generate_slack_response("Invalid Roll. <num>d<side> +/-<modifier>", in_channel=False))
 
     if "rolls" not in roll_dict or "modifier" not in roll_dict or "total" not in roll_dict:
         if debug:
             print("Invalid Roll, Given " + str(roll_dict))
-        return jsonify(generate_slack_response("Invalid Roll"))
+        return jsonify(generate_slack_response("Invalid Roll. <num>d<side> +/-<modifier>", in_channel=False))
 
     string_number_list = list(map(str, roll_dict["rolls"]))
     output_text = []
@@ -266,7 +281,8 @@ def roll():
         output_text.append("(" + str(roll_dict["modifier"]) + ")")
 
     output_text.append("=")
-    output_text.append(str(roll_dict["total"]))
+    output_text.append("*" + str(roll_dict["total"]) + "*")
+
     return jsonify(generate_slack_response(" ".join(output_text)))
 
 
