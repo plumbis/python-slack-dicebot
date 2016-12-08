@@ -26,19 +26,18 @@ def valid_roll(input_roll_string):
     Valid numbers are between 1d1 and 99d100
 
     If the roll is invalid returns False.
-    If the roll is valid, an list of [number_of_dice, die, modifier] is returned
+    If the roll is valid, returns a dict of:
+    {"num_dice": int(number_of_dice),
+     "die": int(die),
+     "modifier": modifier}
     '''
 
-    # Slack returns unicode messages. tests are likely strings.
-    # Let's do this the dumb and easy way.
-    try:
-        str(input_roll_string)
-    except ValueError:
+    if not isinstance(input_roll_string, str):
         if debug:
-            print type(input_roll_string)
             print("Input not a string. Given " + str(input_roll_string))
         return False
 
+    # Remove the whitespace
     roll_string = input_roll_string.replace(" ", "")
 
     # 1d6 is minimum roll string length
@@ -57,30 +56,35 @@ def valid_roll(input_roll_string):
 
     num_dice = roll_string[:d_position]
 
-    for character in num_dice:
-        if not character.isdigit():
-            if debug:
-                print("Non digit found in the number of dice provided. Given " + input_roll_string)
-            return False
+    # Because I'm not above giving StackOverflow some credit
+    # https://stackoverflow.com/questions/27050570/how-would-i-account-for-negative-values-in-python
+    try:
+        int(num_dice)
+    except:
+        if debug:
+            print("Non digit found in the number of dice provided. Given " + input_roll_string)
+        return False
 
     plus_pos = roll_string.find("+")
     minus_pos = roll_string.find("-")
 
-    if plus_pos > 0:
+    if plus_pos > 0:  # We have a + modifier
         die_value = roll_string[d_position + 1:plus_pos]
         if len(die_value) == 0:
             if debug:
                 print("No dice value provided. Given " + input_roll_string)
             return False
         roll_modifier = roll_string[plus_pos + 1:]
-    elif minus_pos > 0:
+
+    elif minus_pos > 0:  # We have a - modifier
         die_value = roll_string[d_position + 1:minus_pos]
         if len(die_value) == 0:
             if debug:
                 print("No dice value provided. Given " + input_roll_string)
             return False
         roll_modifier = roll_string[minus_pos:]
-    else:
+
+    else:  # No modifier exists. Mark it zero dude.
         die_value = roll_string[d_position + 1:]
         if len(die_value) == 0:
             if debug:
@@ -88,11 +92,12 @@ def valid_roll(input_roll_string):
             return False
         roll_modifier = "0"
 
-    for character in die_value:
-        if not character.isdigit():
-            if debug:
-                print("Non digit found in the dice value. Given " + input_roll_string)
-            return False
+    try:
+        int(die_value)
+    except:
+        if debug:
+            print("Non digit found in the dice value. Given " + input_roll_string)
+        return False
 
     if int(die_value) <= 0:
         if debug:
@@ -104,72 +109,58 @@ def valid_roll(input_roll_string):
             print("Number of dice can not be 0 or less. Given " + input_roll_string)
         return False
 
+    # This will accept modifiers like "2-3" (and consider it -1)
     if len(roll_modifier) > 0:
-        first_character = True
-        for character in roll_modifier:
-
-            # To make the math easier, we preserve the "-" in a "-2" modifier.
-            # This breaks the isdigit() check.
-            # To solve, let's allow a "-" in the first position only.
-            if character == "-" and first_character:
-                if len(roll_modifier) <= 1:
-                    if debug:
-                        print ("Invalid roll modifer. Given " + str(input_roll_string))
-                    return False
-
-                first_character = False
-                continue
-            if not character.isdigit():
-                if debug:
-                    print("Non digit found in the modifier. Given " + input_roll_string)
-                return False
-            first_character = False
-
-    return [num_dice, die_value, roll_modifier]
-
-
-def generate_roll(roll_list):
-    '''
-    Takes in a valid roll string and returns the sum of the roll with modifiers
-    '''
-
-    '''
-    A big chunk of this code is duplicated from valid_roll().
-    They could probably be put into a shared function, but
-    I would have to be better at parsing logic
-    '''
-
-    if not isinstance(roll_list, list):
-        if debug:
-            print("Roll list is not a list. Passed " + str(roll_list))
-        return False
-
-    if not len(roll_list) == 3:
-        if debug:
-            print("Invalid roll list, passed " + str(roll_list))
-        return False
-
-    for num in roll_list:
-        # Because I'm not above giving StackOverflow some credit
-        # https://stackoverflow.com/questions/27050570/how-would-i-account-for-negative-values-in-python
         try:
-            int(num)
-        except ValueError:
+            int(roll_modifier)
+        except:
             if debug:
-                print("Roll list contains non-numbers. Passed " + str(roll_list))
+                print ("Invalid roll modifer. Given " + str(input_roll_string))
             return False
 
-    num_dice = int(roll_list[0])
-    die_value = int(roll_list[1])
-    modifier = int(roll_list[2])
+    return {"num_dice": int(num_dice),
+            "die": int(die_value),
+            "modifier": int(roll_modifier)}
+
+
+def generate_roll(roll_dict):
+    '''
+    Takes in a valid roll string and returns the sum of the roll with modifiers.
+    Assumes roll_list is a dict containing:
+    {"num_dice": <int>, "die": <int>, "modifier": <int>}
+
+    Returns False if the output is invalid.
+    Returns dict containing {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
+    '''
+
+    if not isinstance(roll_dict, dict):
+        if debug:
+            try:
+                print("Roll dict is not a dict. Passed " + str(roll_dict))
+            except:
+                print("Roll dict is not a dict and can't be cast to string")
+        return False
+
+    if "num_dice" not in roll_dict or "die" not in roll_dict or "modifier" not in roll_dict:
+        if debug:
+            print("Missing dictionary key in roll_dict. Passed " + str(roll_dict))
+        return False
+    try:
+        num_dice = int(roll_dict["num_dice"])
+        die_value = int(roll_dict["die"])
+        modifier = int(roll_dict["modifier"])
+    except:
+        if debug:
+            print("Roll dict contains non-numbers. Passed " + str(roll_dict))
+        return False
 
     if num_dice <= 0:
         if debug:
-            print("Invalid number of dice. Passed " + str(roll_list))
+            print("Invalid number of dice. Passed " + str(roll_dict))
         return False
     if die_value <= 0:
         if debug:
-            print("Invalid die value. Passed " + str(roll_list))
+            print("Invalid die value. Passed " + str(roll_dict))
         return False
     rolls = []
 
@@ -179,7 +170,9 @@ def generate_roll(roll_list):
             print(("roll: " + str(roll_result)))
         rolls.append(roll_result)
 
-    return [rolls, modifier]
+    return {"total": sum(rolls) + modifier,
+            "rolls": rolls,
+            "modifier": modifier}
 
 
 def parse_slack_message(slack_message):
@@ -243,33 +236,33 @@ def generate_slack_response(text):
 def roll():
 
     slack_dict = parse_slack_message(request.form)
-    print request.form
+    print(request.form)
 
     if not slack_dict:
         return jsonify(generate_slack_response("Invalid Slack Message"))
 
-    roll_list = valid_roll(slack_dict["text"])
+    # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
+    roll_dict = valid_roll(slack_dict["text"])
 
-    if not roll_list:
+    if not isinstance(roll_dict, dict):
+        if debug:
+            print("valid_roll() failed to return a dict. Provided " + str(roll_dict))
+
+    if "rolls" not in roll_dict or "modifier" not in roll_dict or "total" not in roll_dict:
+        if debug:
+            print("Invalid Roll, Given " + str(roll_dict))
         return jsonify(generate_slack_response("Invalid Roll"))
 
-    generated_rolls = generate_roll(roll_list)
-    int_rolls = generated_rolls[0]
-    modifier = generated_rolls[1]
-    string_rolls = []
-    rolls_total = sum(int_rolls) + modifier
-
-    for roll in int_rolls[0]:
-        string_rolls.append(str(roll))
-
-    output = []
-    output.append(" + ".join(string_rolls))
-    if modifier != 0:
-        output.append(" + (" + str(modifier) + ")")
-
-    output.append(" = ")
-    output.append(rolls_total)
-    return jsonify(generate_slack_response("".join(output)))
+    string_number_list = list(map(str, roll_dict["rolls"]))
+    output_text = []
+    for roll in string_number_list:
+        output_text.append("(" + roll + ")")
+    if roll_dict["modifier"] != 0:
+        output_text.append("+")
+        output_text.append(roll_dict["modifier"])
+    output_text.append("=")
+    output_text.append(str(roll_dict["total"]))
+    return jsonify(generate_slack_response(" ".join(output_text)))
 
 
 if __name__ == "__main__":
