@@ -112,13 +112,34 @@ class ValidateRolls(unittest.TestCase):
 
 class GenerateRolls(unittest.TestCase):
 
+    # {"num_dice": <int>, "die": <int>, "modifier": <int>}
+
     def test_invalid_inputs(self):
         # Note: list of length 3 with all int or float are valid
         # as they can be cast to int.
-        input_list = [[], ["1"], ["1", "1"], ["1", "2", "3", "4"],
-                      ["-1", "-1", "-1"], [1], [1, 2], [1, 2, 3, 4],
-                      [1.1], [1.1, 2], [1.1, 2, 3, 4],
-                      [1, 2.1], [1, 2.1, 3, 4], [1, 2, 3, 4.1]]
+        input_list = [{},
+                      {"num_dice": "1"},
+                      {"num_dice": "1", "die": "1"},
+                      {"num_dice": "[1]", "die": "2", "modifier": "3"},
+                      {"num_dice": "1", "die": "[2]", "modifier": "3"},
+                      {"num_dice": "1", "die": "2", "modifier": "[3]"},
+                      {"num_dice": [1], "die": 2, "modifier": 3},
+                      {"num_dice": 1, "die": [2], "modifier": 3},
+                      {"num_dice": 1, "die": 2, "modifier": [3]},
+                      {"num_dice": 1},
+                      {"num_dice": 1, "die": 1},
+                      {"num_dice": 1.1},
+                      {"num_dice": 1, "die": 1.1},
+                      {"num_dice": 1.1, "die": 1},
+                      {"num_dice": 1.1, "die": 1.1},
+
+                      {"die": 1},
+                      {"die": 1, "modifier": 1},
+                      {"die": 1.1},
+                      {"die": 1, "modifier": 1.1},
+                      {"die": 1.1, "modifier": 1},
+                      {"die": 1.1, "modifier": 1.1},
+                      ]
 
         result_list = list(map(generate_roll, input_list))
 
@@ -126,65 +147,62 @@ class GenerateRolls(unittest.TestCase):
             self.assertFalse(result)
 
     def test_valid_inputs(self):
-        # input_list = [, [1, 1, -1], [1, 1, 0],
-        #               [2, 1, 1], [2, 1, -1], [2, 1, 0]]
 
-        self.assertEqual(generate_roll([1, 1, 0]), 1)
-        self.assertEqual(generate_roll([1, 1, -1]), 0)
-        self.assertEqual(generate_roll([1, 1, 1]), 2)
+        self.assertEqual(generate_roll({"num_dice": 1, "die": 1, "modifier": 0})["total"], 1)
+        self.assertEqual(generate_roll({"num_dice": 1, "die": 1, "modifier": -1})["total"], 0)
+        self.assertEqual(generate_roll({"num_dice": 1, "die": 1, "modifier": 1})["total"], 2)
 
-        self.assertEqual(generate_roll([2, 1, 0]), 2)
-        self.assertEqual(generate_roll([2, 1, -1]), 1)
-        self.assertEqual(generate_roll([2, 1, 1]), 3)
+        self.assertEqual(generate_roll({"num_dice": 2, "die": 1, "modifier": 0})["total"], 2)
+        self.assertEqual(generate_roll({"num_dice": 2, "die": 1, "modifier": -1})["total"], 1)
+        self.assertEqual(generate_roll({"num_dice": 2, "die": 1, "modifier": 1})["total"], 3)
 
-        self.assertTrue(2 <= generate_roll([2, 6, 0]) <= 16)
-        self.assertTrue(2 <= generate_roll([2, 6, 0]) <= 16)
-        self.assertTrue(2 <= generate_roll([2, 6, 0]) <= 16)
+        self.assertTrue(2 <= generate_roll({"num_dice": 2, "die": 6, "modifier": 0})["total"] <= 16)
+        self.assertTrue(2 <= generate_roll({"num_dice": 2, "die": 6, "modifier": 0})["total"] <= 16)
+        self.assertTrue(2 <= generate_roll({"num_dice": 2, "die": 6, "modifier": 0})["total"] <= 16)
 
-        self.assertTrue(3 <= generate_roll([2, 6, 1]) <= 17)
-        self.assertTrue(3 <= generate_roll([2, 6, 1]) <= 17)
-        self.assertTrue(3 <= generate_roll([2, 6, 1]) <= 17)
+        self.assertTrue(3 <= generate_roll({"num_dice": 2, "die": 6, "modifier": 1})["total"] <= 17)
+        self.assertTrue(3 <= generate_roll({"num_dice": 2, "die": 6, "modifier": 1})["total"] <= 17)
+        self.assertTrue(3 <= generate_roll({"num_dice": 2, "die": 6, "modifier": 1})["total"] <= 17)
 
-        self.assertTrue(1 <= generate_roll([2, 6, -1]) <= 15)
-        self.assertTrue(1 <= generate_roll([2, 6, -1]) <= 15)
-        self.assertTrue(1 <= generate_roll([2, 6, -1]) <= 15)
+        self.assertTrue(1 <= generate_roll({"num_dice": 2, "die": 6, "modifier": -1})["total"] <= 15)
+        self.assertTrue(1 <= generate_roll({"num_dice": 2, "die": 6, "modifier": -1})["total"] <= 15)
+        self.assertTrue(1 <= generate_roll({"num_dice": 2, "die": 6, "modifier": -1})["total"] <= 15)
 
-        self.assertTrue(3 <= generate_roll([3, 10, 0]) <= 30)
-        self.assertTrue(3 <= generate_roll([3, 10, 0]) <= 30)
-        self.assertTrue(3 <= generate_roll([3, 10, 0]) <= 30)
+        self.assertTrue(3 <= generate_roll({"num_dice": 3, "die": 10, "modifier": 0})["total"] <= 30)
+        self.assertTrue(3 <= generate_roll({"num_dice": 3, "die": 10, "modifier": 0})["total"] <= 30)
+        self.assertTrue(3 <= generate_roll({"num_dice": 3, "die": 10, "modifier": 0})["total"] <= 30)
 
-        self.assertTrue(4 <= generate_roll([3, 10, 1]) <= 31)
-        self.assertTrue(4 <= generate_roll([3, 10, 1]) <= 31)
-        self.assertTrue(4 <= generate_roll([3, 10, 1]) <= 31)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 10, "modifier": 1})["total"] <= 31)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 10, "modifier": 1})["total"] <= 31)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 10, "modifier": 1})["total"] <= 31)
 
-        self.assertTrue(2 <= generate_roll([3, 10, -1]) <= 29)
-        self.assertTrue(2 <= generate_roll([3, 10, -1]) <= 29)
-        self.assertTrue(2 <= generate_roll([3, 10, -1]) <= 29)
+        self.assertTrue(2 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -1})["total"] <= 29)
+        self.assertTrue(2 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -1})["total"] <= 29)
+        self.assertTrue(2 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -1})["total"] <= 29)
 
-        self.assertTrue(3 <= generate_roll([3, 100, 0]) <= 300)
-        self.assertTrue(3 <= generate_roll([3, 100, 0]) <= 300)
-        self.assertTrue(3 <= generate_roll([3, 100, 0]) <= 300)
+        self.assertTrue(3 <= generate_roll({"num_dice": 3, "die": 100, "modifier": 0})["total"] <= 300)
+        self.assertTrue(3 <= generate_roll({"num_dice": 3, "die": 100, "modifier": 0})["total"] <= 300)
+        self.assertTrue(3 <= generate_roll({"num_dice": 3, "die": 100, "modifier": 0})["total"] <= 300)
 
-        self.assertTrue(4 <= generate_roll([3, 100, 1]) <= 301)
-        self.assertTrue(4 <= generate_roll([3, 100, 1]) <= 301)
-        self.assertTrue(4 <= generate_roll([3, 100, 1]) <= 301)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 100, "modifier": 1})["total"] <= 301)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 100, "modifier": 1})["total"] <= 301)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 100, "modifier": 1})["total"] <= 301)
 
-        self.assertTrue(2 <= generate_roll([3, 100, -1]) <= 299)
-        self.assertTrue(2 <= generate_roll([3, 100, -1]) <= 299)
-        self.assertTrue(2 <= generate_roll([3, 100, -1]) <= 299)
+        self.assertTrue(2 <= generate_roll({"num_dice": 3, "die": 100, "modifier": -1})["total"] <= 299)
+        self.assertTrue(2 <= generate_roll({"num_dice": 3, "die": 100, "modifier": -1})["total"] <= 299)
+        self.assertTrue(2 <= generate_roll({"num_dice": 3, "die": 100, "modifier": -1})["total"] <= 299)
 
-        self.assertTrue(4 <= generate_roll([3, 10, +11]) <= 44)
-        self.assertTrue(4 <= generate_roll([3, 10, +11]) <= 44)
-        self.assertTrue(4 <= generate_roll([3, 10, +11]) <= 44)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 10, "modifier": +11})["total"] <= 44)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 10, "modifier": +11})["total"] <= 44)
+        self.assertTrue(4 <= generate_roll({"num_dice": 3, "die": 10, "modifier": +11})["total"] <= 44)
 
-        self.assertTrue(0 <= generate_roll([3, 10, -3]) <= 27)
-        self.assertTrue(0 <= generate_roll([3, 10, -3]) <= 27)
-        self.assertTrue(0 <= generate_roll([3, 10, -3]) <= 27)
+        self.assertTrue(0 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -3})["total"] <= 27)
+        self.assertTrue(0 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -3})["total"] <= 27)
+        self.assertTrue(0 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -3})["total"] <= 27)
 
-        self.assertTrue(-17 <= generate_roll([3, 10, -20]) <= 10)
-        self.assertTrue(-17 <= generate_roll([3, 10, -20]) <= 10)
-        self.assertTrue(-17 <= generate_roll([3, 10, -20]) <= 10)
-
+        self.assertTrue(-17 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -20})["total"] <= 10)
+        self.assertTrue(-17 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -20})["total"] <= 10)
+        self.assertTrue(-17 <= generate_roll({"num_dice": 3, "die": 10, "modifier": -20})["total"] <= 10)
 
 if __name__ == '__main__':
     unittest.main()
