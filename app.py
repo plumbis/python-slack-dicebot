@@ -259,7 +259,7 @@ def roll():
         output_text.append("(" + roll + ")")
     if roll_dict["modifier"] != 0:
         output_text.append("+")
-        output_text.append(roll_dict["modifier"])
+        output_text.append(str(roll_dict["modifier"]))
     output_text.append("=")
     output_text.append(str(roll_dict["total"]))
     return jsonify(generate_slack_response(" ".join(output_text)))
