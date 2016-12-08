@@ -257,7 +257,7 @@ def roll():
     output_text = []
 
     for roll in string_number_list:
-        if len(output_text) > 1:
+        if len(output_text) >= 1:
             output_text.append("+")
         output_text.append(roll)
     if roll_dict["modifier"] > 0:
