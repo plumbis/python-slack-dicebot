@@ -4,6 +4,7 @@ from flask import request
 from flask import jsonify
 import random
 import os
+import sys
 
 app = Flask(__name__)
 
@@ -253,6 +254,8 @@ def test_roll():
         output = format_standard_roll(rolled_dice, slack_dict["username"], parsed_roll)
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe))
+    except:
+        return generate_slack_response("Uncaught error: " + sys.exc_info())
 
     return generate_slack_response(output)
 
