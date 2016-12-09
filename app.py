@@ -244,7 +244,7 @@ def format_standard_roll(rolled_dice, username, roll):
     output_text.append("*" + str(rolled_dice["total"]) + "*")
     output_text.append("")
 
-    return output_text
+    return "".join(output_text)
 
 
 @app.route('/test', methods=["GET", "POST"])
