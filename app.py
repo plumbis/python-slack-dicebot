@@ -38,7 +38,7 @@ def parse_roll(input_roll_string):
      "die": int(die),
      "modifier": modifier}
     '''
-
+    raise DicebotException("Input not a string, given" + str(input_roll_string))
     if not isinstance(input_roll_string, str):
         if debug:
             print("Input not a string. Given " + str(input_roll_string))
