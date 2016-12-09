@@ -12,6 +12,16 @@ SLACK_WEBHOOK = None
 SLACK_TOKEN = None
 
 
+class DicebotException(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        if debug:
+            print ("Error: " + repr(self))
+        return jsonify(generate_slack_response(self))
+
+
 def valid_roll(input_roll_string):
     '''
     Takes in a roll_string from the slack command.
@@ -175,7 +185,7 @@ def generate_roll(roll_dict):
             "modifier": modifier}
 
 
-def parse_slack_message(slack_message,roll2d20=False):
+def parse_slack_message(slack_message, roll2d20=False):
     '''
     Slack POST messages send JSON that looks like the following:
     {"token": "uto4ItLoT82ceQoBpIvgtzzz",
@@ -242,6 +252,10 @@ def generate_slack_response(text, in_channel=True):
 
 
 @app.route('/test', methods=["GET", "POST"])
+def test_thing():
+    raise DicebotException("bad stuff")
+
+
 def normal_roll():
 
     slack_dict = parse_slack_message(request.form)
