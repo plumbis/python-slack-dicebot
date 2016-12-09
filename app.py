@@ -4,7 +4,7 @@ from flask import request
 from flask import jsonify
 import random
 import os
-import sys
+import traceback
 
 app = Flask(__name__)
 
@@ -255,7 +255,7 @@ def test_roll():
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe))
     except:
-        return generate_slack_response("Uncaught error: " + sys.exc_info()[0] + " " + sys.exc_info()[2])
+        return generate_slack_response("Uncaught error: " + traceback.format_exc())
 
     return generate_slack_response(output)
 
