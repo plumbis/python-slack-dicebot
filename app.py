@@ -225,24 +225,26 @@ def format_standard_roll(rolled_dice, username, roll):
 
     output_text = []
     try:
-        output_text.append(str(username) + " rolled " + str(roll["num_dice"]) + "d" + str(roll["die"]))
+        output_text.append(str(username) + " rolled " + str(roll["num_dice"]) + "d" + str(roll["die"] + ":"))
     except:
         raise DicebotException("format_standard_roll could not cast roll values to string.")
 
-    output_text.append("")
+    output_text.append("\n")
 
+    printed_first_roll = False
     for roll in string_number_list:
-        if len(output_text) >= 1:
+        if printed_first_roll:
             output_text.append("+")
+            printed_first_roll = True
         output_text.append(roll)
     if rolled_dice["modifier"] > 0:
         output_text.append("(+" + str(rolled_dice["modifier"]) + ")")
     if rolled_dice["modifier"] < 0:
         output_text.append("(" + str(rolled_dice["modifier"]) + ")")
 
-    output_text.append("=")
+    output_text.append(" = ")
     output_text.append("*" + str(rolled_dice["total"]) + "*")
-    output_text.append("")
+    output_text.append("\n")
 
     return "".join(output_text)
 
