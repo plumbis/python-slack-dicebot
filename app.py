@@ -16,7 +16,7 @@ class DicebotException(Exception):
     def __init__(self, value):
         self.value = value
         if debug:
-            print value
+            print(value)
 
     def __str__(self):
         return str(self.value)
