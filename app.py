@@ -15,6 +15,8 @@ SLACK_TOKEN = None
 class DicebotException(Exception):
     def __init__(self, value):
         self.value = value
+        if debug:
+            print value
 
     def __str__(self):
         return str(self.value)
@@ -38,10 +40,7 @@ def parse_roll(input_roll_string):
      "die": int(die),
      "modifier": modifier}
     '''
-    raise DicebotException("Input not a string, given" + str(input_roll_string))
     if not isinstance(input_roll_string, str):
-        if debug:
-            print("Input not a string. Given " + str(input_roll_string))
         raise DicebotException("Input not a string, given" + str(input_roll_string))
 
     # Remove the whitespace
@@ -50,16 +49,12 @@ def parse_roll(input_roll_string):
     # 1d6 is minimum roll string length
     # 100d100+100 is the maximum roll string
     if len(roll_string) < 3 or len(roll_string) > 11:
-        if debug:
-            print("Roll string too short. Given " + input_roll_string)
-        return False
+        raise DicebotException("Roll string too short. Given " + input_roll_string)
 
     d_position = roll_string.find("d")
 
     if d_position < 0:
-        if debug:
-            print("'d' found in incorrect position. Given " + input_roll_string)
-        return False
+        raise DicebotException("'d' found in incorrect position. Given " + input_roll_string)
 
     num_dice = roll_string[:d_position]
 
@@ -68,9 +63,7 @@ def parse_roll(input_roll_string):
     try:
         int(num_dice)
     except:
-        if debug:
-            print("Non digit found in the number of dice provided. Given " + input_roll_string)
-        return False
+        raise DicebotException("Non digit found in the number of dice provided. Given " + input_roll_string)
 
     plus_pos = roll_string.find("+")
     minus_pos = roll_string.find("-")
@@ -78,52 +71,41 @@ def parse_roll(input_roll_string):
     if plus_pos > 0:  # We have a + modifier
         die_value = roll_string[d_position + 1:plus_pos]
         if len(die_value) == 0:
-            if debug:
-                print("No dice value provided. Given " + input_roll_string)
-            return False
+            raise DicebotException("No dice value provided. Given " + input_roll_string)
+
         roll_modifier = roll_string[plus_pos + 1:]
 
     elif minus_pos > 0:  # We have a - modifier
         die_value = roll_string[d_position + 1:minus_pos]
         if len(die_value) == 0:
-            if debug:
-                print("No dice value provided. Given " + input_roll_string)
-            return False
+            raise DicebotException("No dice value provided. Given " + input_roll_string)
+
         roll_modifier = roll_string[minus_pos:]
 
     else:  # No modifier exists. Mark it zero dude.
         die_value = roll_string[d_position + 1:]
         if len(die_value) == 0:
-            if debug:
-                print("No dice value provided. Given " + input_roll_string)
-            return False
+            raise DicebotException("No dice value provided. Given " + input_roll_string)
+
         roll_modifier = "0"
 
     try:
         int(die_value)
     except:
-        if debug:
-            print("Non digit found in the dice value. Given " + input_roll_string)
-        return False
+        raise DicebotException("Non digit found in the dice value. Given " + input_roll_string)
 
     if int(die_value) <= 0:
-        if debug:
-            print("Die value can not be 0 or less. Given " + input_roll_string)
-        return False
+        raise DicebotException("Die value can not be 0 or less. Given " + input_roll_string)
 
     if int(num_dice) <= 0:
-        if debug:
-            print("Number of dice can not be 0 or less. Given " + input_roll_string)
-        return False
+        raise DicebotException("Number of dice can not be 0 or less. Given " + input_roll_string)
 
     # This will accept modifiers like "2-3" (and consider it -1)
     if len(roll_modifier) > 0:
         try:
             int(roll_modifier)
         except:
-            if debug:
-                print ("Invalid roll modifer. Given " + str(input_roll_string))
-            return False
+            raise DicebotException("Invalid roll modifer. Given " + str(input_roll_string))
 
     return {"num_dice": int(num_dice),
             "die": int(die_value),
@@ -264,6 +246,7 @@ def test_roll():
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe))
 
+    return generate_slack_response("no error")
 
 '''
 def normal_roll():
