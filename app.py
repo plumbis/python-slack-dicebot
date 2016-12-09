@@ -254,7 +254,11 @@ def generate_slack_response(text, in_channel=True):
 
 @app.route('/test', methods=["GET", "POST"])
 def test_thing():
-    raise DicebotException("bad stuff")
+
+    try:
+        raise DicebotException("bad stuff")
+    except:
+        return jsonify(generate_slack_response("bad stuff"))
 
 
 def normal_roll():
