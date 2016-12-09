@@ -224,7 +224,11 @@ def format_standard_roll(rolled_dice, username, roll):
         raise DicebotException("format_standard_roll passed values that can't be cast to string")
 
     output_text = []
-    output_text.append(username + " rolled " + roll["num_dice"] + "d" + roll["die"])
+    try:
+        output_text.append(str(username) + " rolled " + str(roll["num_dice"]) + "d" + str(roll["die"]))
+    except:
+        raise DicebotException("format_standard_roll could not cast roll values to string.")
+
     output_text.append("")
 
     for roll in string_number_list:
