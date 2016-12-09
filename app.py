@@ -255,7 +255,7 @@ def test_roll():
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe))
     except:
-        return generate_slack_response("Uncaught error: " + sys.exc_info())
+        return generate_slack_response("Uncaught error: " + sys.exc_info()[0] + " " + sys.exc_info()[2])
 
     return generate_slack_response(output)
 
