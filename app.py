@@ -17,8 +17,8 @@ class DicebotException(Exception):
         self.value = value
 
     def __str__(self):
-        if debug:
-            print ("Error: " + repr(self))
+        # if debug:
+        #     print ("Error: " + repr(self))
         return jsonify(generate_slack_response(self))
 
 
