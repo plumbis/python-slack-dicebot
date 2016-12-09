@@ -262,7 +262,7 @@ def test_roll():
     try:
         roll_dict = parse_roll(roll_string)
     except DicebotException as dbe:
-        return generate_slack_response("error: " + dbe)
+        return generate_slack_response("error: " + str(dbe))
 
 
 '''
