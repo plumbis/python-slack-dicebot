@@ -123,40 +123,27 @@ def generate_roll(roll_dict):
     '''
 
     if not isinstance(roll_dict, dict):
-        if debug:
-            try:
-                print("Roll dict is not a dict. Passed " + str(roll_dict))
-            except:
-                print("Roll dict is not a dict and can't be cast to string")
-        return False
+        raise DicebotException("Roll dict is not a dict and can't be cast to string")
 
     if "num_dice" not in roll_dict or "die" not in roll_dict or "modifier" not in roll_dict:
-        if debug:
-            print("Missing dictionary key in roll_dict. Passed " + str(roll_dict))
-        return False
+        raise DicebotException("Missing dictionary key in roll_dict. Passed " + str(roll_dict))
+
     try:
         num_dice = int(roll_dict["num_dice"])
         die_value = int(roll_dict["die"])
         modifier = int(roll_dict["modifier"])
     except:
-        if debug:
-            print("Roll dict contains non-numbers. Passed " + str(roll_dict))
-        return False
+        raise DicebotException("Roll dict contains non-numbers. Passed " + str(roll_dict))
 
     if num_dice <= 0:
-        if debug:
-            print("Invalid number of dice. Passed " + str(roll_dict))
-        return False
-    if die_value <= 0:
-        if debug:
-            print("Invalid die value. Passed " + str(roll_dict))
-        return False
-    rolls = []
+        raise DicebotException("Invalid number of dice. Passed " + str(roll_dict))
 
+    if die_value <= 0:
+        raise DicebotException("Invalid die value. Passed " + str(roll_dict))
+
+    rolls = []
     for x in range(0, num_dice):
         roll_result = random.randint(1, die_value)
-        if debug:
-            print(("roll: " + str(roll_result)))
         rolls.append(roll_result)
 
     return {"total": sum(rolls) + modifier,
@@ -164,7 +151,7 @@ def generate_roll(roll_dict):
             "modifier": modifier}
 
 
-def parse_slack_message(slack_message, roll2d20=False):
+def parse_slack_message(slack_message):
     '''
     Slack POST messages send JSON that looks like the following:
     {"token": "uto4ItLoT82ceQoBpIvgtzzz",
@@ -180,33 +167,20 @@ def parse_slack_message(slack_message, roll2d20=False):
     '''
 
     if "user_name" not in slack_message:
-        if debug:
-            print("No user_name field in slack message: " + slack_message)
-        raise DicebotException("Invalid Slack message, no user_name")
+        raise DicebotException("Invalid Slack message, no user_name in slack message: " + slack_message)
 
     if "command" not in slack_message:
-        if debug:
-            print("No command in slack message: " + slack_message)
-        return False
+        raise DicebotException("No command in slack message: " + slack_message)
 
     if "text" not in slack_message:
-        if debug:
-            print("No text in slack message: " + slack_message)
-        return False
+        raise DicebotException("No text in slack message: " + slack_message)
 
     if "channel_name" not in slack_message:
-        if debug:
-            print("No channel in slack message: " + slack_message)
-        return False
+        raise DicebotException("No channel in slack message: " + slack_message)
 
-    if roll2d20:
-        text = "1d20"
-    else:
-        text = slack_message["text"]
-
-    return {"user_name": slack_message["user_name"],
+    return {"username": slack_message["user_name"],
             "command": slack_message["command"],
-            "text": text,
+            "text": slack_message["text"],
             "channel_name": slack_message["channel_name"]}
 
 
@@ -230,23 +204,57 @@ def generate_slack_response(text, in_channel=True):
     return jsonify(response)
 
 
+def format_standard_roll(rolled_dice, username, roll):
+    '''
+    Takes in a rolled_dice dict, slack username and the original parsed roll
+    and returns a string.
+
+    This assumes the output should be for a standard dice roll (not adv or dis).
+
+    Format is
+        <username> rolled <num>d<die> (+)<modifier>
+        <roll> + <roll> + <roll> (+)<modifier> = <total>
+
+    '''
+    try:
+        string_number_list = list(map(str, rolled_dice["rolls"]))
+    except:
+        print(rolled_dice)
+        raise DicebotException("format_standard_roll passed values that can't be cast to string")
+
+    output_text = []
+    output_text.append(username + " rolled " + roll["num_dice"] + "d" + roll["die"])
+    output_text.append("")
+
+    for roll in string_number_list:
+        if len(output_text) >= 1:
+            output_text.append("+")
+        output_text.append(roll)
+    if rolled_dice["modifier"] > 0:
+        output_text.append("(+" + str(rolled_dice["modifier"]) + ")")
+    if rolled_dice["modifier"] < 0:
+        output_text.append("(" + str(rolled_dice["modifier"]) + ")")
+
+    output_text.append("=")
+    output_text.append("*" + str(rolled_dice["total"]) + "*")
+    output_text.append("")
+
+
 @app.route('/test', methods=["GET", "POST"])
 def test_roll():
 
     if debug:
         print(request.form)
 
-    slack_dict = parse_slack_message(request.form)
-
-    roll_string = slack_dict["text"]
-
-    # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
     try:
-        roll_dict = parse_roll(roll_string)
+        slack_dict = parse_slack_message(request.form)
+        parsed_roll = parse_roll(slack_dict["text"])
+        rolled_dice = generate_roll(parsed_roll)
+        output = format_standard_roll(rolled_dice, slack_dict["username"], parsed_roll)
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe))
 
-    return generate_slack_response("no error")
+    return generate_slack_response(output)
 
 '''
 def normal_roll():
