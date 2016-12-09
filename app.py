@@ -17,13 +17,10 @@ class DicebotException(Exception):
         self.value = value
 
     def __str__(self):
-        # if debug:
-        #     print ("Error: " + repr(self))
-        #return jsonify(generate_slack_response(self))
-        return repr(self.value)
+        return str(self.value)
 
 
-def valid_roll(input_roll_string):
+def parse_roll(input_roll_string):
     '''
     Takes in a roll_string from the slack command.
     Expected format is <num_dice>d<die_value>.
@@ -36,8 +33,7 @@ def valid_roll(input_roll_string):
 
     Valid numbers are between 1d1 and 99d100
 
-    If the roll is invalid returns False.
-    If the roll is valid, returns a dict of:
+    returns a dict of:
     {"num_dice": int(number_of_dice),
      "die": int(die),
      "modifier": modifier}
@@ -46,7 +42,7 @@ def valid_roll(input_roll_string):
     if not isinstance(input_roll_string, str):
         if debug:
             print("Input not a string. Given " + str(input_roll_string))
-        return False
+        raise DicebotException("Input not a string, given" + str(input_roll_string))
 
     # Remove the whitespace
     roll_string = input_roll_string.replace(" ", "")
@@ -204,7 +200,7 @@ def parse_slack_message(slack_message, roll2d20=False):
     if "user_name" not in slack_message:
         if debug:
             print("No user_name field in slack message: " + slack_message)
-        return False
+        raise DicebotException("Invalid Slack message, no user_name")
 
     if "command" not in slack_message:
         if debug:
@@ -249,18 +245,27 @@ def generate_slack_response(text, in_channel=True):
     if debug:
         print("Slack Response: " + str(response))
 
-    return response
+    return jsonify(response)
 
 
 @app.route('/test', methods=["GET", "POST"])
-def test_thing():
+def test_roll():
 
+    if debug:
+        print(request.form)
+
+    slack_dict = parse_slack_message(request.form)
+
+    roll_string = slack_dict["text"]
+
+    # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
     try:
-        raise DicebotException("bad stuff")
-    except:
-        return jsonify(generate_slack_response("bad stuff"))
+        roll_dict = parse_roll(roll_string)
+    except DicebotException as dbe:
+        return generate_slack_response("error: " + dbe)
 
 
+'''
 def normal_roll():
 
     slack_dict = parse_slack_message(request.form)
@@ -304,7 +309,7 @@ def normal_roll():
     output_text.append("")
 
     return jsonify(generate_slack_response(" ".join(output_text)))
-
+'''
 
 if __name__ == "__main__":
     app.run()
