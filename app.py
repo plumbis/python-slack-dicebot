@@ -19,7 +19,8 @@ class DicebotException(Exception):
     def __str__(self):
         # if debug:
         #     print ("Error: " + repr(self))
-        return jsonify(generate_slack_response(self))
+        #return jsonify(generate_slack_response(self))
+        return repr(self.value)
 
 
 def valid_roll(input_roll_string):
