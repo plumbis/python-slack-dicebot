@@ -27,10 +27,9 @@ The following options exist:
  For example, /character will return 6 values
 '''
 
-
 app = Flask(__name__)
 
-debug = True
+debug = False
 
 
 class DicebotException(Exception):
@@ -69,14 +68,13 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
      "die": int(die),
      "modifier": modifier}
     '''
-    print(adv_or_dis)
     try:
         if adv_or_dis:
             if debug:
                 print("Rolling adv/dis")
             # Need to append the input_string in case there are modifiers
             # Let the rest of the function determine if the input_string is valid
-            input_roll_string = "2d20" + input_string
+            input_roll_string = "2d20" + str(input_string)
 
         elif character:
             if debug:
@@ -87,7 +85,7 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
         else:
             if debug:
                 print("normal roll")
-            input_roll_string = input_string
+            input_roll_string = str(input_string)
     except:
         print(input_string)  # capture the input string if it's invalid
         raise DicebotException("Invalid roll or modifier")
@@ -136,7 +134,7 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
         if len(die_value) == 0:
             raise DicebotException("No dice value provided. Given " + input_roll_string)
 
-        roll_modifier = "0"
+        roll_modifier = 0
 
     try:
         int(die_value)
@@ -150,11 +148,10 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
         raise DicebotException("Number of dice can not be 0 or less. Given " + input_roll_string)
 
     # This will accept modifiers like "2-3" (and consider it -1)
-    if len(roll_modifier) > 0:
-        try:
-            int(roll_modifier)
-        except:
-            raise DicebotException("Invalid roll modifer. Given " + str(input_roll_string))
+    try:
+        int(roll_modifier)
+    except:
+        raise DicebotException("Invalid roll modifer. Given " + str(input_roll_string))
 
     return {"num_dice": int(num_dice),
             "die": int(die_value),
