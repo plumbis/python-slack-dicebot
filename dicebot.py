@@ -529,7 +529,7 @@ def dis_roll():
         print(request.form)
 
     try:
-        #PArse the incoming slack JSON message
+        #Parse the incoming slack JSON message
         slack_dict = parse_slack_message(request.form)
 
         # Parse the input, but set it to only roll 2d20
@@ -544,7 +544,7 @@ def dis_roll():
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe) + "\n Please use /dis (+/-)<num>", in_channel=False)
     except:
-        print("Unhandled traceback in /adv")
+        print("Unhandled traceback in /dis")
         print(traceback.format_exc())
         return generate_slack_response("Hmm....something went wrong. Try again?", in_channel=False)
 
@@ -576,7 +576,7 @@ def character():
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe) + "\n Please use /character", in_channel=False)
     except:
-        print("Unhandled traceback in /adv")
+        print("Unhandled traceback in /character")
         print(traceback.format_exc())
         return generate_slack_response("Hmm....something went wrong. Try again?", in_channel=False)
 
