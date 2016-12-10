@@ -25,6 +25,8 @@ Dicebot has four options:
 
 The button is the easiest way. If you wish to deploy manually, create a new application and use the `heroku cli` instructions to clone this project or connect it directly to github.
 
+While working on the app and deploying tailing the Heroku logs is a useful tool. To do this, with the Heroku CLI installed, use `heroku logs --app <HEROKU_APP_NAME> -t`
+
 ### Heroku Free Tier
 If you deploy on the Heroku free tier the instance will go to sleep when not in use. The first time you use dicebot after it is put in hibernation the command will timeout. Be patient and the app will restart within a minute and work normal after that. Only if you continue to receive timeout errors after 1-2 minutes should you consider something broken.
 
