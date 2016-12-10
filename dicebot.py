@@ -78,7 +78,7 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
             # Let the rest of the function determine if the input_string is valid
             input_roll_string = "2d20" + input_string
 
-        if character:
+        elif character:
             if debug:
                 print("Rolling character")
             # Stat blocks do not have modifiers, so ignore any input.
