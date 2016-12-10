@@ -43,9 +43,6 @@ def parse_roll(input_string, adv_or_dis=False):
     '''
     try:
         if adv_or_dis:
-            print("adv")
-            print(input_string)
-            print(type(input_string))
             input_roll_string = "2d20" + input_string
         else:
             input_roll_string = input_string
@@ -285,6 +282,7 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
 
     if adv:
         try:
+            print(rolled_dice)
             if rolled_dice[0] >= rolled_dice[1]:
                 output_text.append("*" + str(rolled_dice[0]) + "*")
                 output_text.append(" ")
