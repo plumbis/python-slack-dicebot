@@ -75,7 +75,11 @@ Built a try and except block. `DicebotExceptions` are known errors or conditions
 Most commands will take in an input, do some dice related stuff, format the output and pass it back to the user.
 
 First `parse_slack_message(request.form)` will make the inbound slack message easier to work with.
+
 Next, see if the input matches a "4d6 +2" style with `parse_roll`
+
 With valid input, use `generate_roll` to roll 4x 6 sided dice and add 2 at the end.
-Now a custom output function, similar to `format_standard_roll` needs to be created to handle what's special about this roll type
+
+Now a custom output function, similar to `format_standard_roll` needs to be created to handle what's special about this roll type.
+
 And then take that output string and send it to `generate_slack_response` to get a valid JSON output. If you do not want to show the world the answer use `generate_slack_response(in_channel=False)`
