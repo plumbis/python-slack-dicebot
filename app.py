@@ -280,7 +280,7 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
 
     output_text.append("\n")
 
-    if not len(rolled_dice) == 2:
+    if roll["num_dice"] != 2:
         raise DicebotException("Trying to format adv/dis roll with more than 2d20")
 
     if adv:
@@ -353,7 +353,6 @@ def adv_roll():
     try:
         slack_dict = parse_slack_message(request.form)
         parsed_roll = parse_roll(slack_dict["text"], adv_or_dis=True)
-        print(parsed_roll)
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, adv=True)
     except DicebotException as dbe:
