@@ -23,7 +23,7 @@ class DicebotException(Exception):
         return str(self.value)
 
 
-def parse_roll(input_string, adv_or_dis=False):
+def parse_roll(input_string, adv_or_dis=False, character=False):
     '''
     Takes in a roll_string from the slack command.
     Expected format is <num_dice>d<die_value>.
@@ -44,6 +44,8 @@ def parse_roll(input_string, adv_or_dis=False):
     try:
         if adv_or_dis:
             input_roll_string = "2d20" + input_string
+        if character:
+            input_roll_string = "4d6"
         else:
             input_roll_string = input_string
     except:
@@ -327,6 +329,43 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
     return "".join(output_text)
 
 
+def format_character_roll(roll_list, username):
+    '''
+    Takes in a a list of 6 generate_roll dicts
+    Indicates the low and total for each roll dict.
+    Returns a string ready to be passed to the slack message builder.
+    '''
+
+    output_text = []
+    try:
+        output_text.append(str(username) + " rolled a stat block:")
+    except:
+        raise DicebotException("format_character_roll username is not a string")
+
+    output_text.append("\n")
+
+    if len(roll_list) != 6:
+        print(roll_list)
+        raise DicebotException("Incorrect number of rolls in the stat block")
+
+    # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
+    for roll in roll_list:
+        try:
+            sorted_rolls = sorted(roll, key=int)
+            output_text.append("(" + str(sorted_rolls[0] + ") "))
+            output_text.append(str(sorted_rolls[1]) + " + ")
+            output_text.append(str(sorted_rolls[2]) + " + ")
+            output_text.append(str(sorted_rolls[3]) + " = ")
+            output_text.append("*" + str(sum(sorted_rolls[1], sorted_rolls[2], sorted_rolls[3])) + "*")
+        except:
+            print(traceback.format_exc())
+            raise DicebotException("Unable to print statblock")
+
+        output_text.append("\n")
+
+    return "".join(output_text)
+
+
 @app.route('/test', methods=["GET", "POST"])
 def test_roll():
 
@@ -376,6 +415,26 @@ def dis_roll():
         parsed_roll = parse_roll(slack_dict["text"], adv_or_dis=True)
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, dis=True)
+    except DicebotException as dbe:
+        return generate_slack_response("error: " + str(dbe))
+    except:
+        return generate_slack_response("Uncaught error: " + traceback.format_exc())
+
+    return generate_slack_response(output)
+
+
+@app.route('/character', methods=["GET", "POST"])
+def character():
+    if debug:
+        print(request.form)
+
+    try:
+        slack_dict = parse_slack_message(request.form)
+        parsed_roll = parse_roll(slack_dict["text"])
+        roll = []
+        for x in range(6):
+            roll.append(generate_roll(parsed_roll))
+        output = format_character_roll(roll, slack_dict["username"])
     except DicebotException as dbe:
         return generate_slack_response("error: " + str(dbe))
     except:
