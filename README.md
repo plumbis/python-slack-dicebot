@@ -10,17 +10,17 @@ Dicebot has four options:
  - `/dis`. Dis is the opposite of `/adv`. Dis will roll 2d20 and return the lowest value. Dis also applies any modifiers. For example, `/dis -1` or `/dis +4`
  - '/character'. Character rolls 4d6 and drops the lowest value. This is done 6 times. Character does not take any inputs or modifiers and will ignore any that are passed.
 
- ## Files
- `.slugignore` is used to tell Heroku to not copy files to Heroku when the app is deployed. Only `dicebot.py` is needed to run this application.
- `app.json` allows for the "Deploy to Heroku" button.
- `dicebot.py` is the dice rolling application that can take input from and return messages to Slack.
- `LICENSE.md` is the MIT License this software is licensed under.
- `Procfile` tells Heroku to launch this application with the [Gunicorn](http://gunicorn.org/) webserver front end.
- `requirements.txt` defines the python runtime to use on Heroku.
- `test_suite.py` is the set of python unittests for this software.
+## Files
+-`.slugignore` is used to tell Heroku to not copy files to Heroku when the app is deployed. Only `dicebot.py` is needed to run this application.
+-`app.json` allows for the "Deploy to Heroku" button.
+-`dicebot.py` is the dice rolling application that can take input from and return messages to Slack.
+-`LICENSE.md` is the MIT License this software is licensed under.
+-`Procfile` tells Heroku to launch this application with the [Gunicorn](http://gunicorn.org/) webserver front end.
+-`requirements.txt` defines the python runtime to use on Heroku.
+-`test_suite.py` is the set of python unittests for this software.
 
- ## Deploying to Heroku
- [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/plumbis/python-slack-dicebot)
+## Deploying to Heroku
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/plumbis/python-slack-dicebot)
 
 The button is the easiest way. If you wish to deploy manually, create a new application and use the `heroku cli` instructions to clone this project or connect it directly to github.
 
