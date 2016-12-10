@@ -348,7 +348,7 @@ def adv_roll():
     try:
         slack_dict = parse_slack_message(request.form)
         parsed_roll = parse_roll(slack_dict, adv_or_dis=True)
-        print parsed_roll
+        print(parsed_roll)
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, adv=True)
     except DicebotException as dbe:
