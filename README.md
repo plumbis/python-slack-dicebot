@@ -58,7 +58,8 @@ If you wish to create a new command, follow these steps:
 First, define the inbound slash command to be used and a function it is tied to. (These are [Flask](flask.pocoo.org) things)
 ```python
 @app.route('/new_command', methods=["GET", "POST"])
-def new_command_function():```
+def new_command_function():
+```
 
 Built a try and except block. `DicebotExceptions` are known errors or conditions. The `except` case is for unexpected failures.
 ```python
