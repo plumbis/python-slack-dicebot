@@ -1,2 +1,5 @@
 test_suite.py
 .gitignore
+app.json
+LICENSE.md
+README.md
