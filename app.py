@@ -290,9 +290,10 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
         if rolled_dice["rolls"][1] > rolled_dice["rolls"][0]:
             output_text.append(str(rolled_dice["rolls"][0]))
             output_text.append(" ")
-            output_text.append("*" + rolled_dice["rolls"][1] + "*")
+            output_text.append("*" + str(rolled_dice["rolls"][1]) + "*")
             result = rolled_dice["rolls"][1]
         # except:
+        #     print(traceback.format_exc())
         #     raise DicebotException("format_adv_dis_roll had a problem rolling at advantage")
 
     if dis:
