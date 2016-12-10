@@ -41,13 +41,14 @@ def parse_roll(input_string, adv_or_dis=False):
      "die": int(die),
      "modifier": modifier}
     '''
-    if not isinstance(input_string, str):
-        raise DicebotException("Input not a string, given" + str(input_string))
+    try:
+        if adv_or_dis:
+            input_roll_string = "2d20" + input_string
+        else:
+            input_roll_string = input_string
+    except:
+        raise DicebotException("Invalid roll or modifier")
 
-    if adv_or_dis:
-        input_roll_string = "2d20" + input_string
-    else:
-        input_roll_string = input_string
     # Remove the whitespace
     roll_string = input_roll_string.replace(" ", "")
 
