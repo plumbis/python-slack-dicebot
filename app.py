@@ -23,7 +23,7 @@ class DicebotException(Exception):
         return str(self.value)
 
 
-def parse_roll(input_roll_string):
+def parse_roll(input_string, adv_or_dis=False):
     '''
     Takes in a roll_string from the slack command.
     Expected format is <num_dice>d<die_value>.
@@ -41,9 +41,13 @@ def parse_roll(input_roll_string):
      "die": int(die),
      "modifier": modifier}
     '''
-    if not isinstance(input_roll_string, str):
-        raise DicebotException("Input not a string, given" + str(input_roll_string))
+    if not isinstance(input_string, str):
+        raise DicebotException("Input not a string, given" + str(input_string))
 
+    if adv_or_dis:
+        input_roll_string = "2d20" + input_string
+    else:
+        input_roll_string = input_string
     # Remove the whitespace
     roll_string = input_roll_string.replace(" ", "")
 
@@ -343,7 +347,8 @@ def adv_roll():
 
     try:
         slack_dict = parse_slack_message(request.form)
-        parsed_roll = parse_roll("2d20")
+        parsed_roll = parse_roll(slack_dict, adv_or_dis=True)
+        print parsed_roll
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, adv=True)
     except DicebotException as dbe:
@@ -362,7 +367,7 @@ def dis_roll():
 
     try:
         slack_dict = parse_slack_message(request.form)
-        parsed_roll = parse_roll("2d20")
+        parsed_roll = parse_roll(slack_dict, adv_or_dis=True)
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, dis=True)
     except DicebotException as dbe:
