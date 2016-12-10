@@ -430,7 +430,7 @@ def character():
 
     try:
         slack_dict = parse_slack_message(request.form)
-        parsed_roll = parse_roll(slack_dict["text"])
+        parsed_roll = parse_roll(slack_dict["text"], character=True)
         roll = []
         for x in range(6):
             roll.append(generate_roll(parsed_roll))
