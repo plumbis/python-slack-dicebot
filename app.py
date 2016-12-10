@@ -43,10 +43,14 @@ def parse_roll(input_string, adv_or_dis=False):
     '''
     try:
         if adv_or_dis:
+            print("adv")
+            print(input_string)
+            print(type(input_string))
             input_roll_string = "2d20" + input_string
         else:
             input_roll_string = input_string
     except:
+        print input_string
         raise DicebotException("Invalid roll or modifier")
 
     # Remove the whitespace
@@ -348,7 +352,7 @@ def adv_roll():
 
     try:
         slack_dict = parse_slack_message(request.form)
-        parsed_roll = parse_roll(slack_dict, adv_or_dis=True)
+        parsed_roll = parse_roll(slack_dict["text"], adv_or_dis=True)
         print(parsed_roll)
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, adv=True)
@@ -368,7 +372,7 @@ def dis_roll():
 
     try:
         slack_dict = parse_slack_message(request.form)
-        parsed_roll = parse_roll(slack_dict, adv_or_dis=True)
+        parsed_roll = parse_roll(slack_dict["text"], adv_or_dis=True)
         rolled_dice = generate_roll(parsed_roll)
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, dis=True)
     except DicebotException as dbe:
