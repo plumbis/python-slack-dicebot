@@ -16,7 +16,8 @@ Dicebot has four options:
 -`dicebot.py` is the dice rolling application that can take input from and return messages to Slack.
 -`LICENSE.md` is the MIT License this software is licensed under.
 -`Procfile` tells Heroku to launch this application with the [Gunicorn](http://gunicorn.org/) webserver front end.
--`requirements.txt` defines the python runtime to use on Heroku.
+-`requirements.txt` lists all the python pip packages required to get this application running.
+-`runtime` defines the python runtime to use on Heroku.
 -`test_suite.py` is the set of python unittests for this software.
 
 ## Deploying to Heroku
