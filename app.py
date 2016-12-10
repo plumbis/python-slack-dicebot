@@ -50,7 +50,7 @@ def parse_roll(input_string, adv_or_dis=False):
         else:
             input_roll_string = input_string
     except:
-        print input_string
+        print(input_string)
         raise DicebotException("Invalid roll or modifier")
 
     # Remove the whitespace
