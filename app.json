@@ -1,0 +1,6 @@
+{
+  "name": "Slack Dicebot",
+  "description": "A Slack slash command bot to roll dice",
+  "repository": "https://github.com/plumbis/python-slack-dicebot",
+  "keywords": ["python", "slack", "dicebot", "slash command", "slackbot"]
+}
