@@ -233,7 +233,7 @@ def format_standard_roll(rolled_dice, username, roll):
 
     printed_first_roll = False
     for roll in string_number_list:
-        if printed_first_roll:
+        if not printed_first_roll:
             output_text.append("+")
             printed_first_roll = True
         output_text.append(roll)
