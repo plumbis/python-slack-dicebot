@@ -3,17 +3,42 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 import random
-import os
 import traceback
+
+'''
+This is a slack slash command dicebot.
+
+Slack slash commands can be run against this command.
+
+And various dice can be rolled.
+
+The following options exist:
+ - /roll - this rolls the number of dice provided and adds or subtracts and modifiers.
+ For example, /roll 2d10 +3 will roll 2x 6 sided dice and then add 3 to the result.
+
+ - /adv - this will roll 2x 20 sided dice, returns the highest result with any modifiers.
+ For example, /adv +2 will roll 2d20 then add 2 to the highest result.
+
+ - /dis - this will roll 2x 20 sided dice, then returns the lowest result with any modifiers.
+ For example, /dis -3 will roll 2d20 then subtract 3 from the lowest result.
+
+ - /character - this rolls 4x 6 sided dice, dropping the lowest value. This is done 6 times.
+ This is useful for one command character creation.
+ For example, /character will return 6 values
+'''
+
 
 app = Flask(__name__)
 
 debug = True
-SLACK_WEBHOOK = None
-SLACK_TOKEN = None
 
 
 class DicebotException(Exception):
+    '''
+    A custom exception to simplify error handling.
+
+    If debug is true, then the error will also be sent to the hosting log.
+    '''
     def __init__(self, value):
         self.value = value
         if debug:
@@ -36,6 +61,9 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
 
     Valid numbers are between 1d1 and 99d100
 
+    adv_or_dis = True means that the roll will be set to 2d20
+    character = True means the roll will be set to 4d6
+
     returns a dict of:
     {"num_dice": int(number_of_dice),
      "die": int(die),
@@ -43,13 +71,18 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
     '''
     try:
         if adv_or_dis:
+            # Need to append the input_string in case there are modifiers
+            # Let the rest of the function determine if the input_string is valid
             input_roll_string = "2d20" + input_string
+
         if character:
+            # Stat blocks do not have modifiers, so ignore any input.
             input_roll_string = "4d6"
+
         else:
             input_roll_string = input_string
     except:
-        print(input_string)
+        print(input_string)  # capture the input string if it's invalid
         raise DicebotException("Invalid roll or modifier")
 
     # Remove the whitespace
@@ -127,22 +160,27 @@ def generate_roll(roll_dict):
     Assumes roll_list is a dict containing:
     {"num_dice": <int>, "die": <int>, "modifier": <int>}
 
-    Returns False if the output is invalid.
+    The input is assumed to have been passed from parse_roll()
+
     Returns dict containing {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
     '''
 
     if not isinstance(roll_dict, dict):
-        raise DicebotException("Roll dict is not a dict and can't be cast to string")
+        print(roll_dict)
+        raise DicebotException("generate_roll was not passed a dict()")
 
+    # Check the fields we need in roll_dict exist
     if "num_dice" not in roll_dict or "die" not in roll_dict or "modifier" not in roll_dict:
-        raise DicebotException("Missing dictionary key in roll_dict. Passed " + str(roll_dict))
+        print(roll_dict)
+        raise DicebotException("Missing dictionary key in roll_dict.")
 
     try:
         num_dice = int(roll_dict["num_dice"])
         die_value = int(roll_dict["die"])
         modifier = int(roll_dict["modifier"])
     except:
-        raise DicebotException("Roll dict contains non-numbers. Passed " + str(roll_dict))
+        print(roll_dict)
+        raise DicebotException("Roll dict contains non-numbers.")
 
     if num_dice <= 0:
         raise DicebotException("Invalid number of dice. Passed " + str(roll_dict))
@@ -162,6 +200,16 @@ def generate_roll(roll_dict):
 
 def parse_slack_message(slack_message):
     '''
+    Consumes a slack POST message that was sent in JSON format.
+
+    Validates the fields and passes back a simplified dict containing:
+    {
+    "username":<slack_username>,
+    "command":<slash_command>,
+    "text":<slash_command_arguments>,
+    "channel_name":<slack_channel_command_issued_in>
+    }
+
     Slack POST messages send JSON that looks like the following:
     {"token": "uto4ItLoT82ceQoBpIvgtzzz",
               "team_id": "T0C3TFAGL",
@@ -194,6 +242,16 @@ def parse_slack_message(slack_message):
 
 
 def generate_slack_response(text, in_channel=True):
+    '''
+    Consumes a string message to send to slack in a public format.
+
+    If the message should be sent only to the user set in_channel=False
+    '''
+
+    # If you wish to add slack token validation without putting the values in source
+    # Heroku env variables can be set on the heroku console
+    # and checked with this code
+    #
     # if SLACK_WEBHOOK in os.environ:
     #      webhook = os.environ["SLACK_WEBHOOK"]
     #      token = os.environ["SLACK_TOKEN"]
@@ -218,14 +276,19 @@ def format_standard_roll(rolled_dice, username, roll):
     Takes in a rolled_dice dict, slack username and the original parsed roll
     and returns a string.
 
-    This assumes the output should be for a standard dice roll (not adv or dis).
+    rolled_dice is the output from generate_roll
+    roll is the output from parse_roll
 
-    Format is
+    This assumes the output should be for a standard dice roll (e.g., 2d6 +2).
+    Other roll formats require their own formatting methods.
+
+    Format returned is
         <username> rolled <num>d<die> (+)<modifier>
-        <roll> + <roll> + <roll> (+)<modifier> = <total>
+        <roll> + <roll> + <roll> (+)<modifier> = *<total>*
 
     '''
     try:
+        # This is done to make output easier and to validate the inputs are strings
         string_number_list = list(map(str, rolled_dice["rolls"]))
     except:
         print(rolled_dice)
@@ -240,14 +303,21 @@ def format_standard_roll(rolled_dice, username, roll):
     output_text.append("\n")
 
     printed_first_roll = False
+
     for roll in string_number_list:
+
+        # Only put a "+" after the first roll
         if printed_first_roll:
             output_text.append(" + ")
+
         output_text.append(roll)
         printed_first_roll = True
+
     if rolled_dice["modifier"] > 0:
         output_text.append(" (+" + str(rolled_dice["modifier"]) + ")")
+
     if rolled_dice["modifier"] < 0:
+        # Negative modifiers are "-2" so no need to prepend "-"
         output_text.append(" (" + str(rolled_dice["modifier"]) + ")")
 
     output_text.append(" = ")
@@ -259,16 +329,16 @@ def format_standard_roll(rolled_dice, username, roll):
 
 def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
     '''
-    Takes in a rolled_dice dict, slack username, the original parsed roll
-    set adv=True or dis=True based on what formatting to return.
+    Takes in a generate_roll dict, slack username, and original parsed roll.
+    Set adv=True or dis=True based on what formatting to return.
 
     Returns a string ready to be passed to the slack message builder.
 
     Format is
         <username> rolled at [advantage | disadvantage] (+) <modifier>
-        <roll> (<roll>) ((+)<modifier>) = *<total>*
+        <roll> ~<roll>~ ((+)<modifier>) = *<total>*
 
-    Put parens around the chosen roll.
+    The ignored roll is printed with strikethrough.
     '''
 
     output_text = []
@@ -278,11 +348,13 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
         if dis:
             output_text.append(str(username) + " rolled at Disadvantage:")
     except:
+        print(username)
         raise DicebotException("format_adv_dis_roll could not cast roll values to string.")
 
     output_text.append("\n")
 
     if roll["num_dice"] != 2:
+        print(roll)
         raise DicebotException("Trying to format adv/dis roll with more than 2d20")
 
     if adv:
@@ -290,10 +362,10 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
             if rolled_dice["rolls"][0] >= rolled_dice["rolls"][1]:
                 output_text.append("*" + str(rolled_dice["rolls"][0]) + "*")
                 output_text.append(" ")
-                output_text.append(str(rolled_dice["rolls"][1]))
+                output_text.append("~" + str(rolled_dice["rolls"][1]) + "~")
                 result = rolled_dice["rolls"][0]
             if rolled_dice["rolls"][1] > rolled_dice["rolls"][0]:
-                output_text.append(str(rolled_dice["rolls"][0]))
+                output_text.append("~" + str(rolled_dice["rolls"][0]) + "~")
                 output_text.append(" ")
                 output_text.append("*" + str(rolled_dice["rolls"][1]) + "*")
                 result = rolled_dice["rolls"][1]
@@ -331,15 +403,25 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
 
 def format_character_roll(roll_list, username):
     '''
-    Takes in a a list of 6 generate_roll dicts
+    Takes in a a list of 6 generate_roll dicts and the slack username
     Indicates the low and total for each roll dict.
     Returns a string ready to be passed to the slack message builder.
+
+    Format is:
+    <username> rolled a stat block:
+    ~<low>~ <num> + <num> + <num> = *<total>*
+    ~<low>~ <num> + <num> + <num> = *<total>*
+    ~<low>~ <num> + <num> + <num> = *<total>*
+    ~<low>~ <num> + <num> + <num> = *<total>*
+    ~<low>~ <num> + <num> + <num> = *<total>*
+    ~<low>~ <num> + <num> + <num> = *<total>*
     '''
 
     output_text = []
     try:
         output_text.append(str(username) + " rolled a stat block:")
     except:
+        print(username)
         raise DicebotException("format_character_roll username is not a string")
 
     output_text.append("\n")
@@ -352,7 +434,7 @@ def format_character_roll(roll_list, username):
     for roll in roll_list:
         try:
             sorted_rolls = sorted(roll["rolls"], key=int)
-            output_text.append("(" + str(sorted_rolls[0]) + ") ")
+            output_text.append("~" + str(sorted_rolls[0]) + "~ ")
             output_text.append(str(sorted_rolls[1]) + " + ")
             output_text.append(str(sorted_rolls[2]) + " + ")
             output_text.append(str(sorted_rolls[3]) + " = ")
@@ -365,7 +447,7 @@ def format_character_roll(roll_list, username):
 
     return "".join(output_text)
 
-
+# Handle standard rolls in the style 2d6 +3
 @app.route('/test', methods=["GET", "POST"])
 def test_roll():
 
@@ -373,18 +455,35 @@ def test_roll():
         print(request.form)
 
     try:
+        # First parse the inbound slack message and get a simple dict
         slack_dict = parse_slack_message(request.form)
+
+        # Next, parse and validate the roll from slack
         parsed_roll = parse_roll(slack_dict["text"])
+
+        # Roll all the dice we've been asked to roll
         rolled_dice = generate_roll(parsed_roll)
+
+        # Build the message to send back to slack based on the rolled dice,
+        # the user who asked and the original dice they asked to roll.
         output = format_standard_roll(rolled_dice, slack_dict["username"], parsed_roll)
+
+    # Any errors thrown will all be caught right here.
     except DicebotException as dbe:
-        return generate_slack_response("error: " + str(dbe))
+        return generate_slack_response("error: " + str(dbe) + \
+                                       "\n Please use /roll <num>d<num> (+/-)<num>",
+                                       in_channel=False)
     except:
-        return generate_slack_response("Uncaught error: " + traceback.format_exc())
+        # Ending up here means an exception was thrown that we didn't catch. A bug.
+        print("Unhandled traceback in /roll")
+        print(traceback.format_exc)
+        return generate_slack_response("Hmm....something went wrong. Try again?", in_channel=False)
 
     return generate_slack_response(output)
 
 
+# Handle rolling at advantage
+# Roll 2d20 and drop the low
 @app.route('/adv', methods=["GET", "POST"])
 def adv_roll():
 
@@ -392,18 +491,30 @@ def adv_roll():
         print(request.form)
 
     try:
+        # Parse the incoming slack JSON message
         slack_dict = parse_slack_message(request.form)
+
+        # Parse the input, but set it to only roll 2d20
         parsed_roll = parse_roll(slack_dict["text"], adv_or_dis=True)
+
+        # Roll the 2d20 and modifier
         rolled_dice = generate_roll(parsed_roll)
+
+        # Build the result of the rolls
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, adv=True)
+
     except DicebotException as dbe:
-        return generate_slack_response("error: " + str(dbe))
+        return generate_slack_response("error: " + str(dbe) + "\n Please use /adv (+/-)<num>", in_channel=False)
     except:
-        return generate_slack_response("Uncaught error: " + traceback.format_exc())
+        print("Unhandled traceback in /adv")
+        print(traceback.format_exc())
+        return generate_slack_response("Hmm....something went wrong. Try again?", in_channel=False)
 
     return generate_slack_response(output)
 
 
+# Handle rolling at disadvantage
+# Roll 2d20 and drop the high
 @app.route('/dis', methods=["GET", "POST"])
 def dis_roll():
 
@@ -411,34 +522,56 @@ def dis_roll():
         print(request.form)
 
     try:
+        #PArse the incoming slack JSON message
         slack_dict = parse_slack_message(request.form)
+
+        # Parse the input, but set it to only roll 2d20
         parsed_roll = parse_roll(slack_dict["text"], adv_or_dis=True)
+
+        # Roll 2d20 and modifiers
         rolled_dice = generate_roll(parsed_roll)
+
+        # Build the output
         output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, dis=True)
+
     except DicebotException as dbe:
-        return generate_slack_response("error: " + str(dbe))
+        return generate_slack_response("error: " + str(dbe) + "\n Please use /dis (+/-)<num>", in_channel=False)
     except:
-        return generate_slack_response("Uncaught error: " + traceback.format_exc())
+        print("Unhandled traceback in /adv")
+        print(traceback.format_exc())
+        return generate_slack_response("Hmm....something went wrong. Try again?", in_channel=False)
 
     return generate_slack_response(output)
 
 
+# Build a new character stat block
+# Roll 4d6 and drop the low. Do it 6 times
 @app.route('/character', methods=["GET", "POST"])
 def character():
     if debug:
         print(request.form)
 
     try:
+        # Parse the incoming Slack JSON
         slack_dict = parse_slack_message(request.form)
+
+        # Build a roll dict, but ignore all inputs (dice or modifiers)
         parsed_roll = parse_roll(slack_dict["text"], character=True)
+
+        # This will hold the dict of the roll result.
         roll = []
-        for x in range(6):
+        for x in range(6): # Roll 4d6, 6 times
             roll.append(generate_roll(parsed_roll))
+
+        # Build the output
         output = format_character_roll(roll, slack_dict["username"])
+
     except DicebotException as dbe:
-        return generate_slack_response("error: " + str(dbe))
+        return generate_slack_response("error: " + str(dbe) + "\n Please use /character", in_channel=False)
     except:
-        return generate_slack_response("Uncaught error: " + traceback.format_exc())
+        print("Unhandled traceback in /adv")
+        print(traceback.format_exc())
+        return generate_slack_response("Hmm....something went wrong. Try again?", in_channel=False)
 
     return generate_slack_response(output)
 
