@@ -69,6 +69,7 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
      "die": int(die),
      "modifier": modifier}
     '''
+    print(adv_or_dis)
     try:
         if adv_or_dis:
             if debug:
