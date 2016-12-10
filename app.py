@@ -244,9 +244,9 @@ def format_standard_roll(rolled_dice, username, roll):
         output_text.append(roll)
         printed_first_roll = True
     if rolled_dice["modifier"] > 0:
-        output_text.append("(+" + str(rolled_dice["modifier"]) + ")")
+        output_text.append(" (+" + str(rolled_dice["modifier"]) + ")")
     if rolled_dice["modifier"] < 0:
-        output_text.append("(" + str(rolled_dice["modifier"]) + ")")
+        output_text.append(" (" + str(rolled_dice["modifier"]) + ")")
 
     output_text.append(" = ")
     output_text.append("*" + str(rolled_dice["total"]) + "*")
@@ -271,7 +271,10 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
 
     output_text = []
     try:
-        output_text.append(str(username) + " rolled " + str(roll["num_dice"]) + "d" + str(roll["die"]) + ":")
+        if adv:
+            output_text.append(str(username) + " rolled at Advantage:")
+        if dis:
+            output_text.append(str(username) + " rolled at Disadvantage:")
     except:
         raise DicebotException("format_adv_dis_roll could not cast roll values to string.")
 
@@ -281,20 +284,20 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
         raise DicebotException("Trying to format adv/dis roll with more than 2d20")
 
     if adv:
-        #try:
-        if rolled_dice["rolls"][0] >= rolled_dice["rolls"][1]:
-            output_text.append("*" + str(rolled_dice["rolls"][0]) + "*")
-            output_text.append(" ")
-            output_text.append(str(rolled_dice["rolls"][1]))
-            result = rolled_dice["rolls"][0]
-        if rolled_dice["rolls"][1] > rolled_dice["rolls"][0]:
-            output_text.append(str(rolled_dice["rolls"][0]))
-            output_text.append(" ")
-            output_text.append("*" + str(rolled_dice["rolls"][1]) + "*")
-            result = rolled_dice["rolls"][1]
-        # except:
-        #     print(traceback.format_exc())
-        #     raise DicebotException("format_adv_dis_roll had a problem rolling at advantage")
+        try:
+            if rolled_dice["rolls"][0] >= rolled_dice["rolls"][1]:
+                output_text.append("*" + str(rolled_dice["rolls"][0]) + "*")
+                output_text.append(" ")
+                output_text.append(str(rolled_dice["rolls"][1]))
+                result = rolled_dice["rolls"][0]
+            if rolled_dice["rolls"][1] > rolled_dice["rolls"][0]:
+                output_text.append(str(rolled_dice["rolls"][0]))
+                output_text.append(" ")
+                output_text.append("*" + str(rolled_dice["rolls"][1]) + "*")
+                result = rolled_dice["rolls"][1]
+        except:
+            print(traceback.format_exc())
+            raise DicebotException("format_adv_dis_roll had a problem rolling at advantage")
 
     if dis:
         try:
@@ -306,9 +309,10 @@ def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
             if rolled_dice["rolls"][1] < rolled_dice["rolls"][0]:
                 output_text.append(str(rolled_dice["rolls"][0]))
                 output_text.append(" ")
-                output_text.append("*" + rolled_dice["rolls"][1] + "*")
+                output_text.append("*" + str(rolled_dice["rolls"][1]) + "*")
                 result = rolled_dice["rolls"][1]
         except:
+            print(traceback.format_exc())
             raise DicebotException("format_adv_dis_roll had a problem rolling at disadvantage")
 
     if rolled_dice["modifier"] > 0:
