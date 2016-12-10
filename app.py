@@ -351,7 +351,7 @@ def format_character_roll(roll_list, username):
     # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
     for roll in roll_list:
         try:
-            sorted_rolls = sorted(roll, key=int)
+            sorted_rolls = sorted(roll["rolls"], key=int)
             output_text.append("(" + str(sorted_rolls[0] + ") "))
             output_text.append(str(sorted_rolls[1]) + " + ")
             output_text.append(str(sorted_rolls[2]) + " + ")
