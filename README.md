@@ -34,11 +34,11 @@ No webhook configuration is required, as the message is sent back to Slack on th
 
 ## Configuring Slack.
 To configure slack a slash command must be configured for each option (`roll`, `adv`, `dis`, `character`). Within the slash command configuration use the following settings
-*Command:* - this is the name of the slash command to use, for example `/roll`
-*URL:* - this is the name of your heroku instance URL and the slash command. Most likely something along the lines of "https://fluffy-bunny.herokuap.com/roll",
-*Method* - POST
-*Token* - Unused. For security you can use this token in the `dicebot.py` application.
-*Customize Name` - This is the name that will appear when dicebot responds in slack. May I suggest "Dicebot"
+- **Command:** - this is the name of the slash command to use, for example `/roll`
+- **URL:** - this is the name of your heroku instance URL and the slash command. Most likely something along the lines of "https://fluffy-bunny.herokuap.com/roll",
+- **Method** - POST
+- **Token** - Unused. For security you can use this token in the `dicebot.py` application.
+- **Customize Name** - This is the name that will appear when dicebot responds in slack. May I suggest "Dicebot"
 
 ## Background on The Code
 Dictionaries are passed around to make accessing the data returned from each function easier.
