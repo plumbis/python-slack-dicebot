@@ -356,7 +356,7 @@ def format_character_roll(roll_list, username):
             output_text.append(str(sorted_rolls[1]) + " + ")
             output_text.append(str(sorted_rolls[2]) + " + ")
             output_text.append(str(sorted_rolls[3]) + " = ")
-            output_text.append("*" + str(sum(sorted_rolls[1], sorted_rolls[2], sorted_rolls[3])) + "*")
+            output_text.append("*" + str(sorted_rolls[1] + sorted_rolls[2] + sorted_rolls[3]) + "*")
         except:
             print(traceback.format_exc())
             raise DicebotException("Unable to print statblock")
