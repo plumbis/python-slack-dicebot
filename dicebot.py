@@ -71,15 +71,21 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
     '''
     try:
         if adv_or_dis:
+            if debug:
+                print("Rolling adv/dis")
             # Need to append the input_string in case there are modifiers
             # Let the rest of the function determine if the input_string is valid
             input_roll_string = "2d20" + input_string
 
         if character:
+            if debug:
+                print("Rolling character")
             # Stat blocks do not have modifiers, so ignore any input.
             input_roll_string = "4d6"
 
         else:
+            if debug:
+                print("normal roll")
             input_roll_string = input_string
     except:
         print(input_string)  # capture the input string if it's invalid
@@ -91,7 +97,7 @@ def parse_roll(input_string, adv_or_dis=False, character=False):
     # 1d6 is minimum roll string length
     # 100d100+100 is the maximum roll string
     if len(roll_string) < 3 or len(roll_string) > 11:
-        raise DicebotException("Roll string too short. Given " + input_roll_string)
+        raise DicebotException("Roll string too short. Given " + roll_string)
 
     d_position = roll_string.find("d")
 
