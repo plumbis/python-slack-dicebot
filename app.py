@@ -234,7 +234,7 @@ def format_standard_roll(rolled_dice, username, roll):
     printed_first_roll = False
     for roll in string_number_list:
         if printed_first_roll:
-            output_text.append("+")
+            output_text.append(" + ")
         output_text.append(roll)
         printed_first_roll = True
     if rolled_dice["modifier"] > 0:
@@ -244,6 +244,73 @@ def format_standard_roll(rolled_dice, username, roll):
 
     output_text.append(" = ")
     output_text.append("*" + str(rolled_dice["total"]) + "*")
+    output_text.append("\n")
+
+    return "".join(output_text)
+
+
+def format_adv_dis_roll(rolled_dice, username, roll, adv=False, dis=False):
+    '''
+    Takes in a rolled_dice dict, slack username, the original parsed roll
+    set adv=True or dis=True based on what formatting to return.
+
+    Returns a string ready to be passed to the slack message builder.
+
+    Format is
+        <username> rolled at [advantage | disadvantage] (+) <modifier>
+        <roll> (<roll>) ((+)<modifier>) = *<total>*
+
+    Put parens around the chosen roll.
+    '''
+
+    output_text = []
+    try:
+        output_text.append(str(username) + " rolled " + str(roll["num_dice"]) + "d" + str(roll["die"]) + ":")
+    except:
+        raise DicebotException("format_adv_dis_roll could not cast roll values to string.")
+
+    output_text.append("\n")
+
+    if not len(rolled_dice) == 2:
+        raise DicebotException("Trying to format adv/dis roll with more than 2d20")
+
+    if adv:
+        try:
+            if rolled_dice[0] >= rolled_dice[1]:
+                output_text.append("*" + str(rolled_dice[0]) + "*")
+                output_text.append(" ")
+                output_text.append(str(rolled_dice[1]))
+                result = rolled_dice[0]
+            if rolled_dice[1] > rolled_dice[0]:
+                output_text.append(str(rolled_dice[0]))
+                output_text.append(" ")
+                output_text.append("*" + rolled_dice[1] + "*")
+                result = rolled_dice[1]
+        except:
+            raise DicebotException("format_adv_dis_roll had a problem rolling at advantage")
+
+    if dis:
+        try:
+            if rolled_dice[0] <= rolled_dice[1]:
+                output_text.append("*" + str(rolled_dice[0]) + "*")
+                output_text.append(" ")
+                output_text.append(str(rolled_dice[1]))
+                result = rolled_dice[0]
+            if rolled_dice[1] < rolled_dice[0]:
+                output_text.append(str(rolled_dice[0]))
+                output_text.append(" ")
+                output_text.append("*" + rolled_dice[1] + "*")
+                result = rolled_dice[1]
+        except:
+            raise DicebotException("format_adv_dis_roll had a problem rolling at disadvantage")
+
+    if rolled_dice["modifier"] > 0:
+        output_text.append(" (+" + str(rolled_dice["modifier"]) + ")")
+    if rolled_dice["modifier"] < 0:
+        output_text.append(" (" + str(rolled_dice["modifier"]) + ")")
+
+    output_text.append(" = ")
+    output_text.append("*" + str((result + rolled_dice["modifier"])) + "*")
     output_text.append("\n")
 
     return "".join(output_text)
@@ -267,51 +334,44 @@ def test_roll():
 
     return generate_slack_response(output)
 
-'''
-def normal_roll():
 
-    slack_dict = parse_slack_message(request.form)
-    print(request.form)
+@app.route('/adv', methods=["GET", "POST"])
+def adv_roll():
 
-    if not slack_dict:
-        return jsonify(generate_slack_response("Invalid Slack Message"))
+    if debug:
+        print(request.form)
 
-    roll_string = slack_dict["text"]
+    try:
+        slack_dict = parse_slack_message(request.form)
+        parsed_roll = parse_roll("2d20")
+        rolled_dice = generate_roll(parsed_roll)
+        output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, adv=True)
+    except DicebotException as dbe:
+        return generate_slack_response("error: " + str(dbe))
+    except:
+        return generate_slack_response("Uncaught error: " + traceback.format_exc())
 
-    if not roll_string:
-        return jsonify(generate_slack_response("Invalid Roll. <num>d<side> +/-<modifier>", in_channel=False))
+    return generate_slack_response(output)
 
-    # {"total": <int>, "modifer": <modifer_int>, "rolls": [roll_int]}
-    roll_dict = generate_roll(valid_roll(roll_string))
 
-    if not isinstance(roll_dict, dict):
-        if debug:
-            print("valid_roll() failed to return a dict. Provided " + str(roll_dict))
-        return jsonify(generate_slack_response("Invalid Roll. <num>d<side> +/-<modifier>", in_channel=False))
+@app.route('/dis', methods=["GET", "POST"])
+def dis_roll():
 
-    if "rolls" not in roll_dict or "modifier" not in roll_dict or "total" not in roll_dict:
-        if debug:
-            print("Invalid Roll, Given " + str(roll_dict))
-        return jsonify(generate_slack_response("Invalid Roll. <num>d<side> +/-<modifier>", in_channel=False))
+    if debug:
+        print(request.form)
 
-    string_number_list = list(map(str, roll_dict["rolls"]))
-    output_text = []
+    try:
+        slack_dict = parse_slack_message(request.form)
+        parsed_roll = parse_roll("2d20")
+        rolled_dice = generate_roll(parsed_roll)
+        output = format_adv_dis_roll(rolled_dice, slack_dict["username"], parsed_roll, dis=True)
+    except DicebotException as dbe:
+        return generate_slack_response("error: " + str(dbe))
+    except:
+        return generate_slack_response("Uncaught error: " + traceback.format_exc())
 
-    for roll in string_number_list:
-        if len(output_text) >= 1:
-            output_text.append("+")
-        output_text.append(roll)
-    if roll_dict["modifier"] > 0:
-        output_text.append("(+" + str(roll_dict["modifier"]) + ")")
-    if roll_dict["modifier"] < 0:
-        output_text.append("(" + str(roll_dict["modifier"]) + ")")
+    return generate_slack_response(output)
 
-    output_text.append("=")
-    output_text.append("*" + str(roll_dict["total"]) + "*")
-    output_text.append("")
-
-    return jsonify(generate_slack_response(" ".join(output_text)))
-'''
 
 if __name__ == "__main__":
     app.run()
