@@ -452,7 +452,7 @@ def format_character_roll(roll_list, username):
     return "".join(output_text)
 
 # Handle standard rolls in the style 2d6 +3
-@app.route('/test', methods=["GET", "POST"])
+@app.route('/roll', methods=["GET", "POST"])
 def test_roll():
 
     if debug:
